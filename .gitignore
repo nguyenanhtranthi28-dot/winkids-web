@@ -1,0 +1,6 @@
+winkids.db
+uploads/*
+!uploads/.gitkeep
+.env
+.vercel
+node_modules
