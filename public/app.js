@@ -170,7 +170,7 @@ function pageLogin() {
     <div class="field"><label class="f">Tên đăng nhập (số điện thoại) <i>*</i></label><input id="lu" class="inp" placeholder="Nhập tên đăng nhập"><div class="ferr" id="eu"></div></div>
     <div class="field"><label class="f">Mật khẩu <i>*</i></label><input id="lp" type="password" class="inp" placeholder="Nhập mật khẩu"><div class="ferr" id="ep"></div></div>
     <button class="btn" style="width:100%;margin-top:12px" id="lb">Đăng nhập</button>
-    <p class="muted" style="font-size:12px;margin-top:16px">Tài khoản mẫu: Quản lý 0905100001 · Nhân viên 0905100002 · mật khẩu 123456</p></div></div></div>`;
+    <p class="muted" style="font-size:12px;margin-top:16px">Quên mật khẩu? Vui lòng liên hệ quản lý kho.</p></div></div></div>`;
   const go = async () => {
     const u = $('#lu').value.trim(), p = $('#lp').value; $('#lerr').innerHTML = '';
     $('#eu').textContent = u ? '' : 'Không được để trống!'; $('#ep').textContent = p ? '' : 'Không được để trống!';
