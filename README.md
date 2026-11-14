@@ -1,50 +1,81 @@
-# Hệ thống quản lý kho WinKids (phiên bản 2 – chạy trên máy hoặc trên Vercel)
+# Hệ thống quản lý kho WinKids
 
-Web bám theo các màn hình Figma của nhóm (UC 1 – UC 10). Cùng một bộ code chạy được 2 kiểu:
+**Môn học:** Phân tích và thiết kế hệ thống · **Nhóm:** …
 
-| | Chạy trên máy | Chạy trên Vercel |
+🔗 **Web đã triển khai:** https://winkids-web.vercel.app
+
+## Giới thiệu
+
+WinKids là khu vui chơi trẻ em kết hợp quán cà phê. Hiện quán quản lý nguyên vật liệu bằng sổ tay và Excel nên khó kiểm soát số tồn, hàng nhập thiếu hoặc lỗi, và việc xuất kho của nhân viên.
+
+Hệ thống quản lý kho WinKids là ứng dụng web giúp **quản lý** và **nhân viên** cùng làm việc trên một dữ liệu: lập phiếu nhập và phiếu xuất, theo dõi tồn kho theo thời gian thực, nhận cảnh báo khi nguyên vật liệu sắp hết, quản lý nhà cung cấp và đơn đặt hàng, xem báo cáo. Yêu cầu được xây dựng từ buổi phỏng vấn quản lý quán (anh Bá Minh).
+
+## Chức năng theo use case
+
+| Use case | Chức năng | Người dùng |
 |---|---|---|
-| Cơ sở dữ liệu | file `winkids.db` (tự tạo lần đầu) | Turso (SQLite trên mạng) |
-| Ai vào được | máy đó + thiết bị cùng Wi-Fi | bất kỳ ai có link và tài khoản |
-| Cách chạy | bấm đúp `start-windows.bat` | đưa lên GitHub → Vercel tự chạy |
+| UC 1 | Đăng nhập (tên đăng nhập là số điện thoại), đổi mật khẩu | Quản lý, Nhân viên |
+| UC 2 | Tra cứu thông tin nguyên vật liệu, lọc theo danh mục và kho | Quản lý, Nhân viên |
+| UC 3 | Kiểm tra hàng nhập theo đơn đặt hàng, lập phiếu nhập, ghi nhận hàng lỗi/thiếu kèm ảnh minh chứng | Nhân viên |
+| UC 4 | Lập phiếu xuất kho, xử lý khi thiếu hàng | Nhân viên |
+| UC 5 | Xem lịch sử nhập kho và xuất kho | Quản lý, Nhân viên |
+| UC 6 | Kiểm tra và xác nhận phiếu nhập/xuất, theo dõi tồn kho theo thời gian thực, cảnh báo tự động khi dưới mức tối thiểu | Quản lý |
+| UC 7 | Quản lý đơn đặt hàng (tạo, sửa, xuất file, soạn Gmail gửi nhà cung cấp) và thông tin nhà cung cấp | Quản lý |
+| UC 8 | Quản lý danh mục hàng hóa (thêm, sửa, xóa loại sản phẩm) | Quản lý |
+| UC 9 | Báo cáo nhập, xuất, tồn kho kèm biểu đồ theo ngày/tuần/tháng/năm; lịch sử chỉnh sửa; xuất file Excel/PDF | Quản lý |
+| UC 10 | Tạo tài khoản và phân quyền | Quản lý |
 
-Web tự nhận biết: có biến môi trường `TURSO_DATABASE_URL` và `TURSO_AUTH_TOKEN` thì dùng Turso, không có thì dùng file `winkids.db`.
+Một số quy tắc nghiệp vụ chính:
+- Tồn kho chỉ thay đổi sau khi **quản lý xác nhận** phiếu nhập/xuất.
+- Xuất kho trừ theo **lô gần hết hạn trước** (FEFO).
+- Hệ thống tự sinh cảnh báo khi nguyên vật liệu xuống dưới mức tối thiểu.
+- Mọi thao tác quan trọng đều được ghi vào **nhật ký**: người thực hiện, thời gian, nội dung.
 
-## Chạy trên máy (không cần biết code)
-1. Cài **Node.js** bản LTS (22 trở lên) tại https://nodejs.org.
-2. Bấm đúp `start-windows.bat` (Mac: `start-mac.command`). Trình duyệt tự mở http://localhost:3000.
-3. Muốn tắt: đóng cửa sổ đen (hoặc Ctrl + C).
+## Công nghệ
 
-## Đưa lên Vercel
-Xem file hướng dẫn chi tiết đi kèm. Tóm tắt:
-1. Tạo database trên **Turso** → lấy địa chỉ (`libsql://...`) và mã truy cập (token).
-2. Đưa toàn bộ thư mục này lên **GitHub** (KHÔNG đưa file `winkids.db`).
-3. Trên **Vercel**: Import repo → thêm 2 biến `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` → Deploy.
-4. Lần mở đầu tiên, web tự tạo bảng và dữ liệu mẫu trên Turso.
+| Thành phần | Công nghệ |
+|---|---|
+| Giao diện | HTML, CSS, JavaScript (thiết kế theo bản Figma của nhóm) |
+| Máy chủ | Node.js, chạy dưới dạng Vercel Functions |
+| Cơ sở dữ liệu | SQLite, lưu trên dịch vụ đám mây **Turso** (máy chủ Singapore) |
+| Triển khai | **Vercel**: tự động cập nhật mỗi khi code trên GitHub thay đổi |
 
-## Tài khoản mẫu (mật khẩu đều là `123456` – nhớ đổi khi đưa lên mạng)
-| Vai trò | Tên đăng nhập | Họ tên |
-|---|---|---|
-| Quản lý | 0905100001 | Bá Minh |
-| Nhân viên | 0905100002 | Nguyễn Văn A |
-| Nhân viên | 0905100003 | Trần Thị B |
-| Chưa phân quyền | 0905100004 | Lê Văn C |
+```
+Trình duyệt ──▶ Vercel (giao diện + API) ──▶ Turso (cơ sở dữ liệu SQLite)
+```
 
-Đổi mật khẩu: bấm tên mình ở góc trên bên phải › **Đổi mật khẩu**.
+Cấu trúc bảng giống với script `WinKid_Database.sql` (SQL Server) trong báo cáo.
 
 ## Cấu trúc thư mục
+
 ```
-public/        giao diện (index.html, app.js, style.css, logo.png)
-api/index.js   cửa vào cho Vercel (gọi server.js)
-server.js      máy chủ + toàn bộ API (đăng nhập, phân quyền, nghiệp vụ kho)
-db.js          cơ sở dữ liệu: tạo bảng, dữ liệu mẫu, kết nối SQLite/Turso
-vercel.json    cấu hình Vercel
-package.json   thông tin dự án (Node 22)
-uploads/       ảnh cũ của bản 1 (bản 2 lưu ảnh thẳng trong cơ sở dữ liệu)
-WinKid_Database.sql  script SQL Server dùng trong báo cáo (web không dùng khi chạy)
+public/            Giao diện: index.html, app.js, style.css, logo.png
+api/index.js       Điểm vào của Vercel, chuyển yêu cầu cho server.js
+server.js          Toàn bộ API: đăng nhập, phân quyền, nghiệp vụ kho, báo cáo
+db.js              Tạo bảng, dữ liệu mẫu, kết nối cơ sở dữ liệu
+vercel.json        Cấu hình triển khai trên Vercel
+package.json       Thông tin dự án (Node.js 22)
+WinKid_Database.sql  Script tạo cơ sở dữ liệu (SQL Server) dùng trong báo cáo
 ```
 
-## Dữ liệu
-- Ảnh hóa đơn/minh chứng được thu nhỏ trên trình duyệt rồi lưu trong cơ sở dữ liệu.
-- Giờ giấc luôn theo giờ Việt Nam (UTC+7).
-- Làm lại dữ liệu từ đầu (trên máy): tắt web, xóa `winkids.db`, chạy lại.
+## Triển khai
+
+Web được triển khai trên Vercel, kết nối tới cơ sở dữ liệu Turso qua 2 biến môi trường khai báo trong Vercel:
+
+- `TURSO_DATABASE_URL`: địa chỉ cơ sở dữ liệu
+- `TURSO_AUTH_TOKEN`: mã truy cập (giữ bí mật, không đưa lên GitHub)
+
+Ở lần chạy đầu tiên, hệ thống tự tạo bảng và dữ liệu mẫu. Ảnh hóa đơn và ảnh minh chứng được thu nhỏ trên trình duyệt rồi lưu trong cơ sở dữ liệu. Thời gian luôn theo giờ Việt Nam (UTC+7).
+
+## Tài khoản dùng thử
+
+Tài khoản đăng nhập (vai trò Quản lý và Nhân viên) được nhóm cung cấp kèm khi nộp bài.
+
+## Thành viên
+
+| Thành viên | Phụ trách |
+|---|---|
+| … | UC 3, UC 7, UC 10 |
+| Ngân | UC 1, UC 2, UC 4, UC 8 |
+| Hiền | UC 5, UC 6, UC 9 |
+| … | … |
