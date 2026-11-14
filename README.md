@@ -1,7 +1,5 @@
 # Hệ thống quản lý kho WinKids
 
-**Môn học:** Phân tích và thiết kế hệ thống · **Nhóm:** …
-
 🔗 **Web đã triển khai:** https://winkids-web.vercel.app
 
 ## Giới thiệu
