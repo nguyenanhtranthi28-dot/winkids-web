@@ -1438,7 +1438,11 @@ async function pageTaiKhoan() {
   shell(crumb('Tài khoản'), `${nkHead('Tài khoản', '<button class="btn" id="add">Tạo tài khoản</button>')}
   <div class="card"><div class="nk-chead"><h3>Danh sách tài khoản</h3><span class="muted">${rows.length} tài khoản</span></div>
   ${table([['Họ tên', r => `<b>${esc(r.hoTen)}</b>`], ['Số điện thoại', r => fmtSdt(r.soDienThoai)], ['Quyền', r => badge(r.quyen)], ['Ngày tạo', r => fd(r.ngayTao)], ['Thao tác', r => `<button class="btn sm o" data-p="${r.maTaiKhoan}">Phân quyền</button>`]], rows, 'Chưa có tài khoản', r => r.maTaiKhoan === TK_MOI.ma ? 'hh-hl-ok' : '')}</div>`);
-  if (TK_MOI.msg) { const msg = TK_MOI.msg; nkFlash(msg); const r = $('#nkRight'); r._goc = undefined; r.innerHTML = `<div class="nk-flash ok">${NK_IC.ok}<span>${esc(msg)}</span></div><button class="btn" id="add">Tạo tài khoản</button>`; r.classList.add('tk-r'); }
+  // Thông báo thành công nằm cạnh nút "Tạo tài khoản" (Figma 10.1-04), tự ẩn sau 4 giây, nút vẫn giữ nguyên
+  if (TK_MOI.msg) {
+    const r = $('#nkRight'), f = document.createElement('div'); f.className = 'nk-flash ok'; f.innerHTML = `${NK_IC.ok}<span>${esc(TK_MOI.msg)}</span>`;
+    r.classList.add('tk-r'); r.prepend(f); setTimeout(() => f.remove(), 4000);
+  }
   TK_MOI.ma = TK_MOI.msg = null;
   $('#add').onclick = () => {
     const m = modal(`<div class="nk-mhead"><h3>Tạo tài khoản</h3><button class="nk-x" data-close>✕</button></div><div id="me"></div>
