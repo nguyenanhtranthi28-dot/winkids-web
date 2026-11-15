@@ -402,3 +402,10 @@ tr.hh-hl-red td{background:#FDECEC;font-weight:700}
 .lg-err{display:flex;align-items:center;gap:10px;background:#FDECEC;border:1px solid #F3C2C4;border-radius:8px;padding:11px 14px;margin-top:20px;color:var(--red);font-weight:700;font-size:13px}
 .lg-err svg{color:var(--red);flex-shrink:0}
 .lg-err+.btn{margin-top:16px!important}
+/* UC 2 – gợi ý dạng một dòng: tên bên trái, danh mục bên phải (Figma) */
+.gy-panel.dong{padding:4px;border-radius:8px}
+.gy-panel.dong .gy-it{flex-direction:row;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:6px}
+.gy-panel.dong .gy-it b{font-weight:500;font-size:13px}.gy-panel.dong .gy-it small{font-size:12px;color:#8A93A3}
+.gy-panel.dong .gy-it:hover,.gy-panel.dong .gy-it.on{background:#EEF2F8}
+.srch-inp>span{z-index:3}
+.px-search{max-width:300px;margin-bottom:14px}

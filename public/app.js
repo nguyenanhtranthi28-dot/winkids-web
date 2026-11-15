@@ -71,17 +71,18 @@ const table = (cols, rows, emptyText = 'Không có dữ liệu', rowCls = () => 
 /* ---------- Thanh gợi ý & ô chọn theo Figma (thay cho datalist / select mặc định của trình duyệt) ---------- */
 const boDau = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
 // Gợi ý khi gõ: getItems() trả về [{ v: 'tên', sub: 'dòng phụ' }]
-function goiY(input, getItems, onPick) {
+function goiY(input, getItems, onPick, kieu = '') {
   const wrap = document.createElement('div'); wrap.className = 'gy-wrap';
   input.parentNode.insertBefore(wrap, input); wrap.appendChild(input);
-  const pn = document.createElement('div'); pn.className = 'gy-panel'; wrap.appendChild(pn);
+  const pn = document.createElement('div'); pn.className = 'gy-panel ' + kieu; wrap.appendChild(pn);
   let list = [], idx = -1, imLang = false;
   const close = () => { pn.classList.remove('on'); idx = -1; };
   const render = () => {
     const q = boDau(input.value.trim());
     list = getItems().filter(it => !q || boDau(it.v).includes(q)).slice(0, 8);
     if (!list.length) { pn.innerHTML = q ? '<div class="gy-none">Không có gợi ý phù hợp</div>' : ''; pn.classList.toggle('on', !!q); return; }
-    pn.innerHTML = list.map((it, i) => `<div class="gy-it ${i === idx ? 'on' : ''}" data-i="${i}"><b>${esc(it.v)}</b>${it.sub ? `<small>${esc(it.sub)}</small>` : ''}</div>`).join('');
+    // Figma UC2: dòng đầu được tô sẵn (chỉ để nhìn, Enter vẫn tìm theo chữ đã gõ)
+    pn.innerHTML = list.map((it, i) => `<div class="gy-it ${i === idx || (kieu === 'dong' && idx < 0 && i === 0) ? 'on' : ''}" data-i="${i}"><b>${esc(it.v)}</b>${it.sub ? `<small>${esc(it.sub)}</small>` : ''}</div>`).join('');
     pn.classList.add('on');
   };
   const pick = i => { input.value = list[i].v; close(); imLang = true; input.dispatchEvent(new Event('input')); imLang = false; onPick && onPick(list[i]); };
@@ -265,13 +266,13 @@ async function pageTongQuan() {
 async function pageTraCuu() {
   const [dm, kho] = await Promise.all([api('GET', '/api/danhmuc'), api('GET', '/api/kho')]);
   const pg = shell(crumb('Tồn kho', 'Tra cứu thông tin'), `<div class="row"><h2 class="title grow">Tra cứu nguyên vật liệu</h2><span class="muted">● Cập nhật theo thời gian thực</span></div><br>
-  <div class="row"><div class="grow"><input id="q" class="inp" autocomplete="off" placeholder="Nhập tên nguyên vật liệu cần tìm"></div><button class="btn" id="go">Tìm kiếm</button></div><div class="ferr" id="qerr"></div><br>
+  <div class="row"><div class="grow">${srchInp('q', 'Nhập tên nguyên vật liệu cần tìm')}</div><button class="btn" id="go">Tìm kiếm</button></div><div class="ferr" id="qerr"></div><br>
   <div class="row"><div><label class="f">Danh mục</label><select id="dm" class="inp"><option value="">Tất cả danh mục</option>${dm.map(d => `<option value="${d.maDanhMuc}">${esc(d.tenDanhMuc)}</option>`).join('')}</select></div>
     <div><label class="f">Kho</label><select id="kho" class="inp"><option value="">Tất cả kho</option>${kho.map(k => `<option value="${k.maKho}">${esc(k.tenKho)}</option>`).join('')}</select></div>
     <button class="btn link" id="clr" style="margin-top:20px">Xóa bộ lọc</button></div><br>
   <div class="card" id="res"></div>`);
   const all = await api('GET', '/api/nguyenlieu');
-  goiY($('#q'), () => all.map(n => ({ v: n.tenNguyenLieu, sub: `${n.tenDanhMuc} · ${n.tenKho}` })), () => load());
+  goiY($('#q'), () => all.map(n => ({ v: n.tenNguyenLieu, sub: n.tenDanhMuc })), () => load(), 'dong');
   const load = async () => {
     const q = $('#q').value.trim(), p = new URLSearchParams({ dm: $('#dm').value, kho: $('#kho').value });
     const k = boDau(q); // tìm không phân biệt dấu: "sua" vẫn ra "Sữa"
@@ -608,8 +609,14 @@ async function pageLoHang(maPN, chonMa) {
 /* ---------- UC 4: Xuất kho ---------- */
 async function pageXuatKho() {
   const rows = await api('GET', '/api/phieuxuat');
-  shell(crumb('Xuất kho'), `<div class="row"><h2 class="title grow">Xuất kho</h2><button class="btn" onclick="location.hash='#/xuatkho/tao'">+ Tạo phiếu xuất kho</button></div><br>
-  <div class="card"><h3>Danh sách phiếu xuất kho</h3>${table([['Mã phiếu', r => `<b>${r.maPhieuXuat}</b>`], ['Ngày tạo', r => fd(r.ngayXuat)], ['Người lập', r => esc(r.nguoiLap)], ['Lý do xuất', r => esc(r.lyDoXuat)], ['Số mặt hàng', r => r.soMatHang], ['Trạng thái', r => badge(r.trangThai)]], rows, 'Chưa có phiếu xuất')}</div>`);
+  // Figma UC4.1-02: ô tìm theo mã phiếu nằm trong khung danh sách; phiếu đã xác nhận hiện "Hoàn tất"
+  const tt = r => r.trangThai === 'DaXacNhan' ? '<span class="badge b-green">Hoàn tất</span>' : badge(r.trangThai);
+  shell(crumb('Xuất kho'), `${nkHead('Xuất kho', `<button class="btn" onclick="location.hash='#/xuatkho/tao'">+ Tạo phiếu xuất kho</button>`)}
+  <div class="card"><div class="px-search"><input id="q" class="inp" placeholder="Tìm kiếm theo mã phiếu"></div><div id="ds"></div></div>`);
+  const ve = list => $('#ds').innerHTML = table([['Mã phiếu', r => r.maPhieuXuat], ['Ngày tạo', r => `<span class="muted">${fd(r.ngayXuat)}</span>`], ['Người lập', r => esc(r.nguoiLap)], ['Lý do xuất', r => esc(r.lyDoXuat)], ['Số mặt hàng', r => r.soMatHang], ['Trạng thái', tt]],
+    list, rows.length ? 'Không tìm thấy phiếu xuất phù hợp' : 'Chưa có phiếu xuất');
+  ve(rows);
+  $('#q').oninput = () => { const k = $('#q').value.trim().toUpperCase().replace(/\s/g, ''); ve(rows.filter(r => r.maPhieuXuat.toUpperCase().includes(k))); };
 }
 async function pageXuatForm() {
   const [nls, ds] = await Promise.all([api('GET', '/api/nguyenlieu'), api('GET', '/api/phieuxuat')]); const items = [];
