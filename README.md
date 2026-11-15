@@ -12,7 +12,7 @@ Hệ thống quản lý kho WinKids là ứng dụng web giúp **quản lý** v�
 
 | Use case | Chức năng | Người dùng |
 |---|---|---|
-| UC 1 | Đăng nhập (tên đăng nhập là số điện thoại), đổi mật khẩu | Quản lý, Nhân viên |
+| UC 1 | Đăng nhập (tên đăng nhập là số điện thoại) | Quản lý, Nhân viên |
 | UC 2 | Tra cứu thông tin nguyên vật liệu, lọc theo danh mục và kho | Quản lý, Nhân viên |
 | UC 3 | Kiểm tra hàng nhập theo đơn đặt hàng, lập phiếu nhập, ghi nhận hàng lỗi/thiếu kèm ảnh minh chứng | Nhân viên |
 | UC 4 | Lập phiếu xuất kho, xử lý khi thiếu hàng | Nhân viên |
