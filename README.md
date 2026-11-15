@@ -67,13 +67,18 @@ Web được triển khai trên Vercel, kết nối tới cơ sở dữ liệu T
 
 ## Tài khoản dùng thử
 
-Tài khoản đăng nhập (vai trò Quản lý và Nhân viên) được nhóm cung cấp kèm khi nộp bài.
+Đăng nhập tại https://winkids-web.vercel.app
+
+| Vai trò | Tên đăng nhập (số điện thoại) | Mật khẩu |
+|---|---|---|
+| Quản lý | 0905100001 | 123456 |
+| Nhân viên | 0905100002 | 123456 |
 
 ## Thành viên
 
-| Thành viên | Phụ trách |
+| Họ và tên | Phụ trách |
 |---|---|
-| … | UC 3, UC 7, UC 10 |
-| Ngân | UC 1, UC 2, UC 4, UC 8 |
-| Hiền | UC 5, UC 6, UC 9 |
-| … | … |
+| (Trần Thị Nguyên ANh | UC 3, UC 7, UC 10 |
+| (Nguyễn Thị Ngân) | UC 1, UC 4, UC 8 |
+| (Dịu Hiền ) | UC 5, UC 6, UC 9 |
+| (Lê Thanh Đan Thục) | UC 1, UC 2|
