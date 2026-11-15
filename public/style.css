@@ -230,3 +230,175 @@ h2.title.tk-title{font-size:26px;margin:8px 0 0}
 .srv-err h2{margin:0 0 8px;font-size:20px}.srv-err p{color:var(--gray);margin:0 0 12px}
 .srv-err ol{text-align:left;color:var(--navy);font-size:14px;line-height:1.7;margin:0 0 18px;padding-left:22px}
 .srv-err code{background:#EEF1F5;padding:1px 5px;border-radius:4px}
+
+/* UC 8 – màn chọn chức năng Hàng hóa (Figma) */
+.hh-title{margin-bottom:4px}.hh-sub{margin:0 0 20px}
+.hh-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.hh-card{display:flex;flex-direction:column;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:22px 24px;text-decoration:none;color:var(--navy);transition:.15s}
+.hh-card:hover{border-color:var(--orange);background:#FFF6EA}
+.hh-top{display:flex;align-items:center;gap:14px}.hh-top b{font-size:16px}
+.hh-ic{width:44px;height:44px;border-radius:50%;background:#FDE7C8;color:var(--orange);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hh-card p{color:var(--gray);font-size:13px;line-height:1.5;margin:14px 0 12px;max-width:340px}
+.hh-chon{color:var(--blue);font-weight:600;font-size:13px;margin-top:auto}
+
+/* UC 1 – ô nhập có biểu tượng (Figma) */
+.lg-inp{position:relative}
+.lg-inp .inp{padding-left:42px}
+.lg-inp .lg-ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--gray);display:flex;pointer-events:none}
+.lg-inp #lp{padding-right:46px}
+.lg-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--gray);cursor:pointer;padding:6px;display:flex;border-radius:6px}
+.lg-eye:hover{color:var(--blue);background:#EEF2F8}
+
+/* ---------- Thanh gợi ý khi gõ (Figma) ---------- */
+.gy-wrap{position:relative}
+.gy-panel{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(27,42,65,.14);z-index:40;max-height:300px;overflow:auto;padding:6px}
+.gy-panel.on{display:block}
+.gy-it{padding:9px 12px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.gy-it b{font-weight:600;font-size:14px;color:var(--navy)}.gy-it small{color:var(--gray);font-size:12px}
+.gy-it:hover,.gy-it.on{background:#FFF3E2}
+.gy-none{padding:10px 12px;color:var(--gray);font-size:13px}
+/* ---------- Ô chọn (Figma) ---------- */
+.dd{position:relative;width:100%}
+.dd-native{position:absolute!important;opacity:0;pointer-events:none;width:1px!important;height:1px;inset:auto}
+.dd-btn{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer;font:inherit}
+.dd-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dd-btn .dd-ph{color:#8A93A3}
+.dd-btn svg{flex-shrink:0;color:var(--gray);transition:transform .15s}
+.dd.open .dd-btn{border-color:var(--blue)}.dd.open .dd-btn svg{transform:rotate(180deg)}
+.dd.err .dd-btn{border-color:var(--red)}
+.dd-btn:disabled{background:#EEF1F5;cursor:not-allowed;color:var(--navy)}
+.dd-panel{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(27,42,65,.14);z-index:45;max-height:260px;overflow:auto;padding:6px}
+.dd.open .dd-panel{display:block}
+.dd-it{padding:9px 12px;border-radius:8px;cursor:pointer;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dd-it:hover{background:var(--light)}.dd-it.on{background:var(--blue);color:#fff;font-weight:600}
+/* ---------- Ô số lượng có đơn vị ---------- */
+.unit-inp{position:relative}.unit-inp .inp{padding-right:52px}
+.unit-inp span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--gray);font-size:13px;pointer-events:none}
+.unit-inp.sm .inp{padding:8px 46px 8px 10px}
+.hint{color:var(--gray);font-size:12px;margin-top:5px}
+.grid4 .ferr{min-height:0}
+
+/* ---------- UC 3: Nhập kho (Figma) ---------- */
+.nk-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:4px 0 18px;min-height:44px}
+.nk-head h2.title{font-size:26px;margin:0}
+.nk-steps{display:flex;gap:22px;align-items:center}
+.nk-step{display:flex;align-items:center;gap:8px;color:var(--gray);font-size:13px}
+.nk-step i{font-style:normal;width:22px;height:22px;border-radius:50%;border:1.5px solid #C2C8D2;display:flex;align-items:center;justify-content:center;font-size:12px}
+.nk-step.cur{color:var(--navy);font-weight:700}.nk-step.cur i{background:var(--orange);border-color:var(--orange);color:#fff}
+.nk-step.done{color:var(--blue);font-weight:600}.nk-step.done i{border:0;color:var(--blue)}.nk-step.done i svg{width:22px;height:22px}
+.nk-flash{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;font-weight:600;font-size:13px;min-width:320px}
+.nk-flash.ok{background:#E3F4EA;border:1px solid #B9E2C8;color:#14532D}.nk-flash.ok svg{color:#1E9E57}
+.nk-flash.err{background:var(--red-bg);border:1px solid #F3B8BB;color:var(--red)}.nk-flash.err svg{color:var(--red)}
+.nk-net{display:flex;align-items:center;gap:10px;background:#FDECEC;color:var(--red);font-weight:600;font-size:13px;padding:12px 18px;margin:-24px -24px 18px;border-bottom:1px solid #F3C2C4}
+.nk-net svg{color:var(--red);flex-shrink:0}
+.nk-search{max-width:360px;margin-bottom:18px}
+.nk-chead{display:flex;align-items:baseline;justify-content:space-between;gap:12px}.nk-chead h3{margin-bottom:14px}.nk-chead .muted{font-size:13px}
+.nk-info label.f{font-size:13px}
+.nk-tbl td{vertical-align:middle}.nk-tbl .inp{padding:8px 10px}.nk-tbl .ferr{white-space:nowrap}
+.nk-tbl tr.nk-lech td{background:#FFFAF2}
+.nk-go:hover{background:var(--orange);border-color:var(--orange);color:#fff}
+.nk-alert{border-radius:8px;padding:11px 14px;font-weight:600;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.nk-alert.amber{background:#FFF1DC;color:#9A5B00}.nk-alert.red{background:var(--red-bg);color:var(--red)}.nk-alert.red svg{color:var(--red)}
+.nk-alert.blue{background:var(--light);color:var(--blue);margin-top:4px}
+.nk-alert.shake{animation:nkShake .35s}@keyframes nkShake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.nk-empty{text-align:center;padding:40px 20px 50px}
+.nk-empty>span{width:76px;height:76px;border-radius:50%;background:var(--light);color:var(--blue);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px}
+.nk-empty>span.ok{background:#E3F4EA;color:#1E9E57}.nk-empty>span.ok svg{width:34px;height:34px}
+.nk-empty b{display:block;font-size:17px;margin-bottom:8px}.nk-empty p{color:var(--gray);margin:0}
+.nk-empty.sm{padding:46px 20px}.nk-empty.sm b{font-size:15px}
+/* hóa đơn */
+.nk-opts{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.nk-optc{display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:12px;background:#fff;padding:26px 16px;cursor:pointer;font:inherit;color:var(--navy);width:100%}
+.nk-optc b{font-size:16px;margin-top:6px}.nk-optc small{color:var(--gray);font-size:13px}
+.nk-optc:hover,.nk-optc.on{border-color:var(--orange);background:#FFF6EA}
+.nk-oic{width:52px;height:52px;border-radius:50%;background:#FDE7C8;color:var(--orange);display:flex;align-items:center;justify-content:center}
+#ot .nk-oic{background:var(--light);color:var(--blue)}
+.nk-hd{display:grid;grid-template-columns:300px 1fr;gap:18px}
+.nk-hdimg{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#FAFAF7;margin-bottom:12px;height:260px;display:flex;align-items:center;justify-content:center}
+.nk-hdimg img{max-width:100%;max-height:100%;object-fit:contain}
+.nk-note{font-size:12px;margin:-6px 0 12px}
+/* lô hàng */
+.nk-lo{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start}
+.nk-mh{display:block;width:100%;text-align:left;border:1.5px solid var(--line);border-radius:10px;background:#fff;padding:12px 14px;margin-bottom:10px;cursor:pointer;font:inherit;color:var(--navy);position:relative}
+.nk-mh b{display:block;font-size:14px;margin-bottom:4px}.nk-mh .muted{font-size:12px}
+.nk-mh .badge,.nk-mh .nk-tt{position:absolute;right:12px;bottom:11px;font-size:11px}
+.nk-mh.on{border-color:var(--blue);background:var(--light)}.nk-mh:disabled{cursor:default;opacity:.85}
+.nk-tt{font-weight:700}.nk-tt.blue{color:var(--blue)}.nk-tt.amber{color:#C2410C}
+.nk-lof .grid3 .ferr{min-height:0}
+.nk-han{color:#C2410C;font-size:13px}
+.nk-candate{display:flex;align-items:center;gap:14px;background:#FFF6EA;border:1px solid #F7C98A;border-radius:12px;padding:16px 18px}
+.nk-candate>span{color:#B45309}.nk-candate div{flex:1}.nk-candate b{color:#9A5B00}.nk-candate p{margin:4px 0 0;font-size:13px;color:#7A4A00}
+/* modal ghi nhận sai lệch */
+.modal.nkm{width:560px}
+.nk-mhead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}.nk-mhead .muted{margin:2px 0 0;font-size:13px}
+.nk-x{border:0;background:#F0F2F5;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:15px;flex-shrink:0}
+.nk-pills{display:flex;flex-wrap:wrap;gap:10px}
+.nk-pill{display:flex;align-items:center;gap:8px;border:1.5px solid #CBD2DC;border-radius:22px;padding:8px 14px;cursor:pointer;font-size:13px}
+.nk-pill input{accent-color:var(--blue);margin:0}
+.nk-pill.on{border-color:var(--blue);background:var(--light);color:var(--blue);font-weight:700}
+.nk-anh{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.nk-add{width:84px;height:84px;border:1.5px dashed var(--blue);border-radius:10px;background:#fff;color:var(--blue);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;font:inherit;font-size:11px;font-weight:700}
+.nk-anh.err .nk-add{border-color:var(--red);color:var(--red)}
+.nk-anh-err{display:flex;align-items:center;gap:6px;font-weight:600}.nk-anh-err svg{width:14px;height:14px;color:var(--red)}
+.nk-thumb{width:84px;height:84px;border-radius:10px;overflow:hidden;position:relative}
+.nk-thumb img{width:100%;height:100%;object-fit:cover}
+.nk-thumb span{position:absolute;left:6px;bottom:4px;color:#fff;font-size:10px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.nk-thumb button{position:absolute;right:4px;top:4px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;cursor:pointer}
+.nk-sep{border-top:1px solid var(--line);padding-top:16px}
+.notice .big.cam-i{background:#FDE7C8;color:var(--orange)}
+/* camera */
+.modal.cam{width:440px;background:#1B2335;color:#fff;padding:16px}
+.cam-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.cam-x{border:0;background:#fff;color:#1B2335;border-radius:8px;width:30px;height:30px;cursor:pointer}
+.cam-view{position:relative;background:#2A3448;border-radius:10px;overflow:hidden;aspect-ratio:4/3.4;display:flex;align-items:center;justify-content:center}
+.cam-view video,.cam-view img{width:100%;height:100%;object-fit:cover}
+.cam-frame{position:absolute;inset:8% 10% 14%;border:2.5px dashed var(--orange);border-radius:6px;pointer-events:none}
+.cam-hint{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:12px;font-weight:700}
+.cam-tag{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.6);padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700}
+.cam-foot{display:flex;justify-content:center;padding:16px 0 6px}
+.cam-shot{width:60px;height:60px;border-radius:50%;background:#fff;border:4px solid var(--orange);cursor:pointer}
+.cam-acts{display:grid;grid-template-columns:1fr 1.4fr;gap:12px;margin-top:14px}
+@media (max-width:900px){.nk-hd,.nk-lo,.nk-opts{grid-template-columns:1fr}.nk-head{flex-direction:column;align-items:flex-start}}
+
+/* ---------- UC 8: Hàng hóa (Figma) ---------- */
+.srch-inp{position:relative;flex:1}.srch-inp>span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray);display:flex;pointer-events:none}
+.srch-inp>span svg{width:18px;height:18px}.srch-inp .inp{padding-left:40px}
+.hh-bar{margin-bottom:18px}.hh-bar .btn,.card .row>.btn{padding:11px 26px}
+tr.hh-hl-ok td{background:#E3F4EA;font-weight:700}
+tr.hh-hl-blue td{background:var(--light);font-weight:700}
+tr.hh-hl-red td{background:#FDECEC;font-weight:700}
+.hh-sua{min-width:64px}
+.hh-msub{font-size:13px;margin:0 0 14px}
+.hh-info{display:flex;align-items:flex-end;gap:36px}
+.hh-info div span{display:block;color:var(--gray);font-size:12px;margin-bottom:6px}.hh-info div b{font-size:14px}
+.hh-info .btn{padding:10px 30px}
+.notice .big.hh-del{background:#FFF1DC;color:#C2410C;border:2px solid #F59A23}
+.notice .big.hh-i{background:var(--navy);color:#fff;font-weight:800;font-size:30px}
+.hh-2b{justify-content:center}.hh-2b .btn{flex:1}
+
+/* ---------- UC 7: Đơn đặt hàng & nhà cung cấp (Figma) ---------- */
+.nk-head+.sub-t.dh-sub{margin:-16px 0 18px}
+.nk-head h2 .dh-badge{font-size:13px;vertical-align:middle;margin-left:10px}
+.dh-empty{text-align:center;padding:22px 0 10px;color:var(--gray)}.dh-empty p{margin:0 0 8px}.dh-empty span{color:#8A93A3;font-size:13px}
+.dh-sl{width:100px;padding:8px 10px}
+.dh-bo{color:var(--red)!important;text-decoration:none!important;font-weight:700}
+.dh-addw{position:relative;display:inline-block;margin-top:14px}
+.dh-add{border:1.5px dashed var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:10px 22px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.dh-addw .dd-panel{min-width:300px;top:calc(100% + 4px);bottom:auto}.dh-addw.open .dd-panel{display:block}
+.dd-it.sub,.dh-it{display:flex;justify-content:space-between;align-items:center;gap:14px}.dd-it small,.dh-it small{color:var(--gray);font-size:12px}.dd-it.on small{color:#DCE6F3}
+.dh-foot{align-items:center;gap:12px}
+.dh-file{display:inline-flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 14px;font-size:13px}
+.dh-file i{font-style:normal;background:#C62828;color:#fff;font-size:9px;font-weight:800;padding:3px 4px;border-radius:3px}
+.dh-msub{font-size:13px;margin:0 0 12px}
+.dh-fmt{display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;cursor:pointer}
+.dh-fmt input{accent-color:var(--blue);margin-top:3px}.dh-fmt b{display:block}.dh-fmt small{color:var(--gray);font-size:12px}
+.dh-fmt.on{border-color:var(--blue);background:var(--light)}
+.dh-chk{display:flex;gap:8px;align-items:center;font-size:13px;margin:12px 0 4px;cursor:pointer}.dh-chk input{accent-color:var(--blue);width:16px;height:16px}
+.dh-ok{background:#E3F4EA;border-radius:8px;padding:12px 14px;margin-top:12px}.dh-ok b{display:block;color:#14532D;font-size:13px}.dh-ok span{font-size:12px;color:#1E7A4A}
+.btn.dh-green{background:#1E9E57}
+.ncc-form{max-width:560px}.ncc-luu{padding:11px 34px}
+.notice .big.ncc-warn{background:#FFF1DC;color:#C2410C;font-weight:800;font-size:26px;border:2px solid #F59A23}
+.ncc-xoa{min-width:70px}
+/* UC 1 – thông báo đăng nhập không thành công nằm ngay trên nút (Figma) */
+.lg-err{display:flex;align-items:center;gap:10px;background:#FDECEC;border:1px solid #F3C2C4;border-radius:8px;padding:11px 14px;margin-top:20px;color:var(--red);font-weight:700;font-size:13px}
+.lg-err svg{color:var(--red);flex-shrink:0}
+.lg-err+.btn{margin-top:16px!important}
