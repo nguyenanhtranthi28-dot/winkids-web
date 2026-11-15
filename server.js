@@ -119,11 +119,22 @@ api('GET', '/api/nguyenlieu', 'any', async (req) => {
 });
 async function kiemTraNL(b, ma) {
   for (const [k, t] of [['maNguyenLieu', 'Mã loại sản phẩm'], ['tenNguyenLieu', 'Tên loại sản phẩm'], ['donViTinh', 'Đơn vị tính']])
-    if (!String(b[k] || '').trim()) fail(400, t + ' không được để trống!', { field: k });
-  if (await get('SELECT 1 FROM NguyenLieu WHERE maNguyenLieu=? AND maNguyenLieu<>?', b.maNguyenLieu.trim(), ma || '')) fail(409, 'Mã loại sản phẩm đã tồn tại!', { field: 'maNguyenLieu' });
-  if (await get('SELECT 1 FROM NguyenLieu WHERE lower(tenNguyenLieu)=lower(?) AND maNguyenLieu<>?', b.tenNguyenLieu.trim(), ma || '')) fail(409, 'Tên loại sản phẩm đã tồn tại!', { field: 'tenNguyenLieu' });
+    if (!String(b[k] || '').trim()) fail(400, 'Không được để trống!', { field: k }); // theo Figma UC 8
+  const trungMa = await get('SELECT trangThai FROM NguyenLieu WHERE maNguyenLieu=? AND maNguyenLieu<>?', b.maNguyenLieu.trim(), ma || '');
+  if (trungMa) fail(409, trungMa.trangThai === 'DangSuDung' ? 'Mã loại sản phẩm đã tồn tại!' : 'Mã này đã dùng cho một loại sản phẩm đã xóa, vui lòng chọn mã khác!', { field: 'maNguyenLieu' });
+  // Chỉ so trùng tên với loại sản phẩm đang sử dụng (loại đã xóa thì cho phép tạo lại cùng tên)
+  if (await get("SELECT 1 FROM NguyenLieu WHERE lower(tenNguyenLieu)=lower(?) AND maNguyenLieu<>? AND trangThai='DangSuDung'", b.tenNguyenLieu.trim(), ma || '')) fail(409, 'Tên loại sản phẩm đã tồn tại!', { field: 'tenNguyenLieu' });
 }
 api('POST', '/api/nguyenlieu', 'QuanLy', async (req, b) => {
+  // Tên trùng với một loại sản phẩm đã xóa (ngừng sử dụng) → khôi phục lại loại đó, giữ nguyên mã, tồn kho và lịch sử
+  const daXoa = String(b.tenNguyenLieu || '').trim() && String(b.donViTinh || '').trim() &&
+    await get("SELECT * FROM NguyenLieu WHERE lower(tenNguyenLieu)=lower(?) AND trangThai<>'DangSuDung'", b.tenNguyenLieu.trim());
+  if (daXoa) {
+    await run("UPDATE NguyenLieu SET trangThai='DangSuDung', donViTinh=?, moTa=?, maDanhMuc=?, maKho=? WHERE maNguyenLieu=?",
+      b.donViTinh.trim(), b.moTa || daXoa.moTa, b.maDanhMuc || daXoa.maDanhMuc, b.maKho || daXoa.maKho, daXoa.maNguyenLieu);
+    await log(req.user, 'Them', 'NguyenLieu', daXoa.maNguyenLieu, 'Khôi phục loại sản phẩm đã xóa ' + daXoa.tenNguyenLieu);
+    return { ok: true, khoiPhuc: daXoa.maNguyenLieu };
+  }
   await kiemTraNL(b);
   await run('INSERT INTO NguyenLieu (maNguyenLieu,tenNguyenLieu,donViTinh,moTa,maDanhMuc,maKho,mucToiThieu,mucToiDa) VALUES (?,?,?,?,?,?,?,?)',
     b.maNguyenLieu.trim(), b.tenNguyenLieu.trim(), b.donViTinh.trim(), b.moTa || null, b.maDanhMuc || 'DM01', b.maKho || 'K02', +b.mucToiThieu || 3, +b.mucToiDa || 5);
@@ -153,18 +164,29 @@ api('GET', '/api/ncc', 'any', async (req) => {
   return await all("SELECT * FROM NhaCungCap WHERE trangThai='DangHopTac' AND (lower(tenNCC) LIKE ? OR soDienThoai LIKE ?) ORDER BY maNCC", `%${q}%`, `%${q}%`);
 });
 async function kiemTraNCC(b, ma) {
-  if (!String(b.tenNCC || '').trim() || !String(b.soDienThoai || '').trim()) fail(400, 'Vui lòng nhập đầy đủ thông tin');
+  const thieuTen = !String(b.tenNCC || '').trim(), thieuSdt = !String(b.soDienThoai || '').trim();
+  if (thieuTen || thieuSdt) fail(400, 'Vui lòng nhập đầy đủ thông tin', { thieuTen, thieuSdt });
   const sdt = b.soDienThoai.replace(/\s/g, '');
   if (!/^0\d{9}$/.test(sdt)) fail(400, 'Số điện thoại không hợp lệ', { field: 'soDienThoai' });
-  const trung = await get('SELECT tenNCC FROM NhaCungCap WHERE (lower(tenNCC)=lower(?) OR soDienThoai=?) AND maNCC<>?', b.tenNCC.trim(), sdt, ma || '');
-  if (trung) fail(409, 'Nhà cung cấp đã tồn tại', { trungVoi: trung.tenNCC });
+  // Chỉ so trùng với nhà cung cấp đang hợp tác
+  const trung = await get("SELECT tenNCC, soDienThoai FROM NhaCungCap WHERE (lower(tenNCC)=lower(?) OR soDienThoai=?) AND maNCC<>? AND trangThai='DangHopTac'", b.tenNCC.trim(), sdt, ma || '');
+  if (trung) fail(409, 'Nhà cung cấp đã tồn tại', { trungVoi: trung.tenNCC, trungTen: trung.tenNCC.toLowerCase() === b.tenNCC.trim().toLowerCase(), trungSdt: trung.soDienThoai === sdt });
   return sdt;
 }
-api('POST', '/api/ncc', 'QuanLy', async (req, b) => {
-  const sdt = await kiemTraNCC(b); const ma = await nextId('NhaCungCap', 'maNCC', 'NCC', 3);
+api('POST', '/api/ncc', 'QuanLy', async (req, b) => tx(async () => {
+  const sdt = await kiemTraNCC(b);
+  // Trùng tên/SĐT với nhà cung cấp đã xóa trước đó → khôi phục lại
+  const cu = await get("SELECT * FROM NhaCungCap WHERE (lower(tenNCC)=lower(?) OR soDienThoai=?) AND trangThai='NgungHopTac'", b.tenNCC.trim(), sdt);
+  if (cu) {
+    const khac = await get("SELECT 1 FROM NhaCungCap WHERE (lower(tenNCC)=lower(?) OR soDienThoai=?) AND maNCC<>?", b.tenNCC.trim(), sdt, cu.maNCC);
+    if (khac) fail(409, 'Nhà cung cấp đã tồn tại', { trungTen: true, trungSdt: true });
+    await run("UPDATE NhaCungCap SET tenNCC=?,soDienThoai=?,diaChi=?,trangThai='DangHopTac' WHERE maNCC=?", b.tenNCC.trim(), sdt, b.diaChi || null, cu.maNCC);
+    await log(req.user, 'Them', 'NhaCungCap', cu.maNCC, 'Khôi phục nhà cung cấp ' + b.tenNCC); return { ok: true, maNCC: cu.maNCC };
+  }
+  const ma = await nextId('NhaCungCap', 'maNCC', 'NCC', 3);
   await run('INSERT INTO NhaCungCap (maNCC,tenNCC,soDienThoai,diaChi) VALUES (?,?,?,?)', ma, b.tenNCC.trim(), sdt, b.diaChi || null);
   await log(req.user, 'Them', 'NhaCungCap', ma, 'Thêm nhà cung cấp ' + b.tenNCC); return { ok: true, maNCC: ma };
-});
+}));
 api('PUT', '/api/ncc/:id', 'QuanLy', async (req, b, res, p) => {
   const sdt = await kiemTraNCC(b, p.id);
   await run('UPDATE NhaCungCap SET tenNCC=?,soDienThoai=?,diaChi=? WHERE maNCC=?', b.tenNCC.trim(), sdt, b.diaChi || null, p.id);
@@ -172,8 +194,8 @@ api('PUT', '/api/ncc/:id', 'QuanLy', async (req, b, res, p) => {
 });
 api('DELETE', '/api/ncc/:id', 'QuanLy', async (req, b, res, p) => {
   const ncc = await get('SELECT * FROM NhaCungCap WHERE maNCC=?', p.id); if (!ncc) fail(404, 'Không tìm thấy nhà cung cấp');
-  const don = await get("SELECT maDonHang FROM DonDatHang WHERE maNCC=? AND trangThai<>'DaHoanTat'", p.id);
-  if (don) fail(409, `${ncc.tenNCC} còn đơn đặt hàng chưa hoàn tất (${don.maDonHang}).`);
+  const don = await get("SELECT maDonHang, trangThai FROM DonDatHang WHERE maNCC=? AND trangThai<>'DaHoanTat'", p.id);
+  if (don) fail(409, `${ncc.tenNCC} còn đơn đặt hàng chưa hoàn tất (${don.maDonHang} – ${don.trangThai === 'ChoDatHang' ? 'Chờ đặt hàng' : 'Đã đặt hàng'}).`, { conDon: true });
   await run("UPDATE NhaCungCap SET trangThai='NgungHopTac' WHERE maNCC=?", p.id);
   await log(req.user, 'Xoa', 'NhaCungCap', p.id, 'Xóa nhà cung cấp ' + ncc.tenNCC); return { ok: true };
 });
@@ -183,6 +205,8 @@ api('GET', '/api/donhang', 'any', async (req) => {
   let sql = `SELECT d.*, n.tenNCC, t.hoTen nguoiLap, (SELECT COUNT(*) FROM ChiTietDonDatHang c WHERE c.maDonHang=d.maDonHang) soMatHang
              FROM DonDatHang d JOIN NhaCungCap n ON n.maNCC=d.maNCC JOIN TaiKhoan t ON t.maTaiKhoan=d.maNguoiLap`;
   const p = []; if (req.query.trangThai) { sql += ' WHERE d.trangThai=?'; p.push(req.query.trangThai); }
+  // UC 3: chỉ hiện đơn chưa có phiếu nhập đang chờ xử lý
+  if (req.query.choNhap) sql += (p.length ? ' AND' : ' WHERE') + " NOT EXISTS (SELECT 1 FROM PhieuNhapKho x WHERE x.maDonHang=d.maDonHang AND x.trangThai<>'DaXacNhan')";
   return await all(sql + ' ORDER BY d.ngayDat DESC', ...p);
 });
 api('GET', '/api/donhang/:id', 'any', async (req, b, res, p) => {
@@ -229,7 +253,7 @@ api('POST', '/api/phieunhap', 'any', async (req, b) => tx(async () => {
   if (items.length !== ctDon.length || items.some(i => i.soLuongThucNhan === '' || i.soLuongThucNhan == null)) fail(400, 'Vui lòng nhập số lượng thực nhận');
   for (const i of items) {
     if (!Number.isInteger(+i.soLuongThucNhan) || +i.soLuongThucNhan < 0) fail(400, 'Số lượng không hợp lệ', { maNguyenLieu: i.maNguyenLieu });
-    if (+i.soLuongThucNhan > 0) {
+    if (+i.soLuongThucNhan > 0 && (i.soLo || i.ngaySanXuat || i.hanSuDung)) { // lô/HSD có thể nhập sau (UC 3.3)
       if (!i.soLo || !i.ngaySanXuat || !i.hanSuDung) fail(400, 'Vui lòng nhập đầy đủ số lô, ngày sản xuất, hạn sử dụng', { maNguyenLieu: i.maNguyenLieu });
       if (i.ngaySanXuat > today() || i.hanSuDung <= i.ngaySanXuat) fail(400, 'Thông tin lô hoặc hạn sử dụng không hợp lệ', { maNguyenLieu: i.maNguyenLieu });
       if (i.hanSuDung <= today()) fail(400, 'Hàng đã hết hạn, không thể nhập kho', { maNguyenLieu: i.maNguyenLieu });
@@ -242,8 +266,8 @@ api('POST', '/api/phieunhap', 'any', async (req, b) => tx(async () => {
     ma, now(), anh, coSaiLech ? 'ChoXuLy' : 'ChoXacNhan', b.ghiChu || null, b.maDonHang, req.user.maTaiKhoan);
   for (const i of items) {
     const don = ctDon.find(c => c.maNguyenLieu === i.maNguyenLieu);
-    await run('INSERT INTO ChiTietPhieuNhap VALUES (?,?,?,?,?,1)', ma, i.maNguyenLieu, +i.soLuongThucNhan, don ? don.soLuongDat : null, null);
-    if (+i.soLuongThucNhan > 0)
+    await run('INSERT INTO ChiTietPhieuNhap VALUES (?,?,?,?,?,1)', ma, i.maNguyenLieu, +i.soLuongThucNhan, i.soLuongHoaDon !== undefined && i.soLuongHoaDon !== '' && Number.isInteger(+i.soLuongHoaDon) ? +i.soLuongHoaDon : (don ? don.soLuongDat : null), null);
+    if (+i.soLuongThucNhan > 0 && i.soLo)
       await run('INSERT INTO LoHang VALUES (?,?,?,?,?,0,?,?)', await nextId('LoHang', 'maLo', 'LO-'), i.soLo, i.ngaySanXuat, i.hanSuDung, +i.soLuongThucNhan, ma, i.maNguyenLieu);
   }
   for (const s of (b.saiLech || [])) {
@@ -272,6 +296,12 @@ api('POST', '/api/phieuxuat', 'any', async (req, b) => tx(async () => {
     if (+i.soLuong > nl.soLuongTon) thieu.push({ maNguyenLieu: nl.maNguyenLieu, tenNguyenLieu: nl.tenNguyenLieu, donViTinh: nl.donViTinh, yeuCau: +i.soLuong, ton: nl.soLuongTon });
   }
   if (thieu.length && !b.phuongAn) fail(409, 'Thiếu hàng trong kho', { thieu });
+  if (b.phuongAn === 'LayConLai' && b.thucXuat) for (const i of items) {
+    const v = b.thucXuat[i.maNguyenLieu]; if (v === undefined) continue;
+    const nl = await get('SELECT soLuongTon FROM NguyenLieu WHERE maNguyenLieu=?', i.maNguyenLieu);
+    if (!Number.isInteger(+v) || +v <= 0) fail(400, 'Số lượng thực xuất phải lớn hơn 0!');
+    if (+v > Math.min(+i.soLuong, nl.soLuongTon)) fail(400, 'Số lượng thực xuất không được vượt quá số lượng yêu cầu và tồn kho!');
+  }
   const ma = await nextId('PhieuXuatKho', 'maPhieuXuat', 'PX-');
   const choBoSung = thieu.length && b.phuongAn === 'ChoBoSung';
   await run('INSERT INTO PhieuXuatKho (maPhieuXuat,ngayXuat,lyDoXuat,trangThai,maNguoiLap) VALUES (?,?,?,?,?)', ma, now(), b.lyDoXuat, choBoSung ? 'ChoBoSungHang' : 'ChoXacNhan', req.user.maTaiKhoan);
@@ -279,6 +309,9 @@ api('POST', '/api/phieuxuat', 'any', async (req, b) => tx(async () => {
     const t = thieu.find(x => x.maNguyenLieu === i.maNguyenLieu);
     let thuc = +i.soLuong, tt = 'Du';
     if (t) { if (choBoSung) { thuc = 0; tt = 'ChoBoSung'; } else { thuc = t.ton; tt = 'LayPhanConLai'; } }
+    // UC 4.2: nhân viên có thể chỉnh số lượng thực xuất trong popup xác nhận (không vượt quá yêu cầu và tồn kho)
+    const sua = b.phuongAn === 'LayConLai' && b.thucXuat ? b.thucXuat[i.maNguyenLieu] : undefined;
+    if (sua !== undefined) { thuc = +sua; tt = thuc < +i.soLuong ? 'LayPhanConLai' : 'Du'; }
     await run('INSERT INTO ChiTietPhieuXuat VALUES (?,?,?,?,?)', ma, i.maNguyenLieu, +i.soLuong, thuc, tt);
   }
   await log(req.user, 'Them', 'PhieuXuatKho', ma, 'Tạo phiếu xuất ' + ma + (choBoSung ? ' (chờ bổ sung hàng)' : ''));
@@ -299,6 +332,51 @@ api('GET', '/api/phieunhap/:id', 'any', async (req, b, res, p) => {
   for (const s of pn.saiLech) s.anh = (await all('SELECT duongDan FROM AnhMinhChung WHERE maSaiLech=?', s.maSaiLech)).map(a => a.duongDan);
   return pn;
 });
+// UC 3: phiếu nhập gần đây
+api('GET', '/api/phieunhap', 'any', async () => await all(`SELECT p.maPhieuNhap, p.maDonHang, p.ngayNhap, p.trangThai, t.hoTen nguoiLap,
+    (SELECT COUNT(*) FROM SaiLechHangNhap s WHERE s.maPhieuNhap=p.maPhieuNhap) soSaiLech,
+    (SELECT COUNT(*) FROM ChiTietPhieuNhap c WHERE c.maPhieuNhap=p.maPhieuNhap AND c.soLuongThucNhan>0
+       AND NOT EXISTS (SELECT 1 FROM LoHang l WHERE l.maPhieuNhap=c.maPhieuNhap AND l.maNguyenLieu=c.maNguyenLieu)) chuaCoLo
+  FROM PhieuNhapKho p JOIN TaiKhoan t ON t.maTaiKhoan=p.maNguoiLap ORDER BY p.ngayNhap DESC, p.maPhieuNhap DESC LIMIT 6`));
+const NGAY_CAN_DATE = 30; // HSD còn dưới 30 ngày: hàng cận date, không đạt yêu cầu nhập kho
+const soNgayConHan = hsd => Math.round((Date.parse(hsd + 'T00:00:00Z') - Date.parse(today() + 'T00:00:00Z')) / 864e5);
+// UC 3.3: cập nhật số lô, NSX, HSD cho từng mặt hàng trong phiếu nhập
+api('POST', '/api/phieunhap/:id/lo', 'any', async (req, b, res, p) => tx(async () => {
+  const pn = await get("SELECT * FROM PhieuNhapKho WHERE maPhieuNhap=? AND trangThai<>'DaXacNhan'", p.id);
+  if (!pn) fail(400, 'Phiếu nhập đã được xác nhận, không thể cập nhật lô hàng');
+  const ct = await get('SELECT * FROM ChiTietPhieuNhap WHERE maPhieuNhap=? AND maNguyenLieu=?', p.id, b.maNguyenLieu);
+  if (!ct || !(ct.soLuongThucNhan > 0)) fail(400, 'Mặt hàng không có trong phiếu');
+  const soLo = String(b.soLo || '').trim();
+  if (!soLo || !b.ngaySanXuat || !b.hanSuDung) fail(400, 'Không được để trống!');
+  if (b.ngaySanXuat > today() || b.hanSuDung <= b.ngaySanXuat) fail(400, 'Thông tin lô hàng hoặc hạn sử dụng không hợp lệ');
+  if (soNgayConHan(b.hanSuDung) < NGAY_CAN_DATE) fail(409, 'Hàng cận date/hết hạn, không đạt yêu cầu nhập kho', { canDate: true });
+  await run('DELETE FROM LoHang WHERE maPhieuNhap=? AND maNguyenLieu=?', p.id, b.maNguyenLieu);
+  await run('INSERT INTO LoHang VALUES (?,?,?,?,?,0,?,?)', await nextId('LoHang', 'maLo', 'LO-'), soLo, b.ngaySanXuat, b.hanSuDung, ct.soLuongThucNhan, p.id, b.maNguyenLieu);
+  await log(req.user, 'Sua', 'LoHang', p.id, `Cập nhật lô ${soLo} cho ${b.maNguyenLieu} (phiếu ${p.id})`);
+  return { ok: true };
+}));
+// UC 3.4 (từ bước Lô hàng/HSD): ghi nhận sai lệch sau khi đã lập phiếu, ví dụ hàng cận date bị trả lại
+api('POST', '/api/phieunhap/:id/sailech', 'any', async (req, b, res, p) => tx(async () => {
+  const pn = await get("SELECT * FROM PhieuNhapKho WHERE maPhieuNhap=? AND trangThai<>'DaXacNhan'", p.id);
+  if (!pn) fail(400, 'Phiếu nhập đã được xác nhận');
+  const ct = await get('SELECT * FROM ChiTietPhieuNhap WHERE maPhieuNhap=? AND maNguyenLieu=?', p.id, b.maNguyenLieu);
+  if (!ct) fail(400, 'Mặt hàng không có trong phiếu');
+  if (!b.lyDo || !(+b.soLuongSaiLech > 0)) fail(400, 'Vui lòng chọn lý do và nhập số lượng sai lệch');
+  const anh = (b.anh || []).filter(Boolean); if (!anh.length) fail(400, 'Vui lòng đính kèm ảnh minh chứng');
+  const maSL = await nextId('SaiLechHangNhap', 'maSaiLech', 'SL-');
+  await run('INSERT INTO SaiLechHangNhap (maSaiLech,soLuongSaiLech,lyDo,ngayGhiNhan,maPhieuNhap,maNguyenLieu) VALUES (?,?,?,?,?,?)', maSL, +b.soLuongSaiLech, b.lyDo, now(), p.id, b.maNguyenLieu);
+  for (const a of anh) await run('INSERT INTO AnhMinhChung VALUES (?,?,?)', await nextId('AnhMinhChung', 'maAnh', 'ANH-'), saveImage(a), maSL);
+  // Hàng bị trả lại (cận date/hư hỏng/sai mặt hàng) không nhập kho: trừ khỏi số lượng thực nhận
+  if (b.lyDo !== 'GiaoThieu') {
+    const con = Math.max(0, ct.soLuongThucNhan - +b.soLuongSaiLech);
+    await run('UPDATE ChiTietPhieuNhap SET soLuongThucNhan=? WHERE maPhieuNhap=? AND maNguyenLieu=?', con, p.id, b.maNguyenLieu);
+    if (con === 0) await run('DELETE FROM LoHang WHERE maPhieuNhap=? AND maNguyenLieu=?', p.id, b.maNguyenLieu);
+    else await run('UPDATE LoHang SET soLuongNhap=? WHERE maPhieuNhap=? AND maNguyenLieu=?', con, p.id, b.maNguyenLieu);
+  }
+  await run("UPDATE PhieuNhapKho SET trangThai='ChoXuLy' WHERE maPhieuNhap=?", p.id);
+  await log(req.user, 'Them', 'SaiLechHangNhap', maSL, 'Ghi nhận sai lệch phiếu ' + p.id);
+  return { ok: true };
+}));
 api('GET', '/api/phieuxuat/:id', 'any', async (req, b, res, p) => {
   const px = await get('SELECT p.*, t.hoTen nguoiLap FROM PhieuXuatKho p JOIN TaiKhoan t ON t.maTaiKhoan=p.maNguoiLap WHERE maPhieuXuat=?', p.id);
   if (!px) fail(404, 'Không tìm thấy phiếu');
@@ -308,6 +386,9 @@ api('GET', '/api/phieuxuat/:id', 'any', async (req, b, res, p) => {
 api('POST', '/api/phieunhap/:id/xacnhan', 'QuanLy', async (req, b, res, p) => tx(async () => {
   const pn = await get("SELECT * FROM PhieuNhapKho WHERE maPhieuNhap=? AND trangThai IN ('ChoXacNhan','ChoXuLy')", p.id);
   if (!pn) fail(400, 'Có lỗi xảy ra');
+  if (await get(`SELECT 1 FROM ChiTietPhieuNhap c WHERE c.maPhieuNhap=? AND c.soLuongThucNhan>0
+      AND NOT EXISTS (SELECT 1 FROM LoHang l WHERE l.maPhieuNhap=c.maPhieuNhap AND l.maNguyenLieu=c.maNguyenLieu)`, p.id))
+    fail(400, 'Phiếu nhập chưa được cập nhật đầy đủ lô hàng/HSD, chưa thể xác nhận');
   for (const l of await all('SELECT * FROM LoHang WHERE maPhieuNhap=?', p.id)) {
     await run('UPDATE LoHang SET soLuongCon=soLuongNhap WHERE maLo=?', l.maLo);
     await capNhatTon(l.maNguyenLieu, l.soLuongNhap);
