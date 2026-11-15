@@ -117,7 +117,7 @@ function dropdown(sel) {
   btn.onclick = () => {
     if (w.classList.contains('open')) return close();
     $$('.dd.open').forEach(x => x.classList.remove('open'));
-    pn.innerHTML = [...sel.options].map((o, i) => `<div class="dd-it ${i === sel.selectedIndex ? 'on' : ''} ${o.dataset.sub ? 'sub' : ''}" data-i="${i}"><span>${esc(o.text)}</span>${o.dataset.sub ? `<small>${esc(o.dataset.sub)}</small>` : ''}</div>`).join('');
+    pn.innerHTML = [...sel.options].map((o, i) => `<div class="dd-it ${i === sel.selectedIndex ? 'on' : ''} ${o.dataset.sub ? 'sub' : ''}" data-i="${i}"><span>${esc(o.text)}</span>${o.dataset.sub ? `<small>${esc(o.dataset.sub)}</small>` : ''}${i === sel.selectedIndex && !o.dataset.sub ? '<i class="dd-ok">✓</i>' : ''}</div>`).join('');
     w.classList.add('open'); document.addEventListener('mousedown', out);
     const on = $('.dd-it.on', pn); if (on) on.scrollIntoView({ block: 'nearest' });
   };
@@ -199,13 +199,25 @@ function shell(crumb, html) {
   $('#userchip').onclick = e => {
     e.stopPropagation(); if ($('.menu')) return $('.menu').remove();
     const m = document.createElement('div'); m.className = 'menu';
-    m.innerHTML = `<div style="padding:10px"><b>${esc(me.hoTen)}</b><div class="muted">${ql ? 'Quản lý' : 'Nhân viên'} · ${esc(me.soDienThoai)}</div></div><hr style="border:0;border-top:1px solid #E3E7EE">
-      <a id="mInfo">Thông tin cá nhân</a><a id="mPass">Đổi mật khẩu</a><a id="mOut" class="red">Đăng xuất</a>`;
+    m.innerHTML = `<div class="um-head"><span class="av ${ql ? 'ql' : ''}">${esc(ini)}</span><span><b>${esc(me.hoTen)}</b><small>${ql ? 'Quản lý' : 'Nhân viên'}</small><small>${fmtSdt(me.soDienThoai)}</small></span></div>
+      <a id="mInfo">${LG_IC.user}Thông tin cá nhân</a><a id="mOut" class="red"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></svg>Đăng xuất</a>`;
     $('#userchip').appendChild(m);
-    $('#mInfo').onclick = () => notice('info', me.hoTen, `${ql ? 'Quản lý' : 'Nhân viên'} · ${me.soDienThoai}`);
+    // "Thông tin cá nhân" (Figma UC 10.2-06): xem thông tin, kèm đổi mật khẩu
+    $('#mInfo').onclick = () => {
+      const i = modal(`<div class="nk-mhead"><h3>Thông tin cá nhân</h3><button class="nk-x" data-close>✕</button></div>
+        <div class="field"><label class="f">Họ tên</label><input class="inp" readonly value="${esc(me.hoTen)}"></div>
+        <div class="field"><label class="f">Tên đăng nhập (số điện thoại)</label><input class="inp" readonly value="${fmtSdt(me.soDienThoai)}"></div>
+        <div class="field"><label class="f">Quyền</label><input class="inp" readonly value="${ql ? 'Quản lý' : 'Nhân viên'}"></div>
+        <div class="acts"><button class="btn o" id="mPass">Đổi mật khẩu</button><button class="btn" data-close>Đóng</button></div>`, 'narrow');
+      $('#mPass', i.el).onclick = () => { i.close(); doiMatKhau(); };
+    };
     $('#mOut').onclick = async () => { await api('POST', '/api/logout'); S.me = null; location.hash = '#/login'; };
-    $('#mPass').onclick = () => {
-      const d = modal(`<button class="x" data-close>✕</button><h3>Đổi mật khẩu</h3><p class="muted">Mật khẩu mới tối thiểu 6 ký tự.</p><div id="pe"></div>
+    document.addEventListener('click', () => m.remove(), { once: true });
+  };
+  return $('.page');
+}
+function doiMatKhau() {
+      const d = modal(`<div class="nk-mhead"><div><h3>Đổi mật khẩu</h3><p class="muted">Mật khẩu mới tối thiểu 6 ký tự.</p></div><button class="nk-x" data-close>✕</button></div><div id="pe"></div>
         <div class="field"><label class="f">Mật khẩu hiện tại <i>*</i></label><input id="p0" type="password" class="inp"></div>
         <div class="field"><label class="f">Mật khẩu mới <i>*</i></label><input id="p1" type="password" class="inp"></div>
         <div class="field"><label class="f">Nhập lại mật khẩu mới <i>*</i></label><input id="p2" type="password" class="inp"></div>
@@ -217,11 +229,7 @@ function shell(crumb, html) {
         try { await api('POST', '/api/doimatkhau', { matKhauCu: a, matKhauMoi: b }); d.close(); toast('Đổi mật khẩu thành công'); }
         catch (e) { $('#pe', d.el).innerHTML = `<div class="alert red">! ${esc(e.error || 'Có lỗi xảy ra')}</div>`; }
       };
-    };
-    document.addEventListener('click', () => m.remove(), { once: true });
-  };
-  return $('.page');
-}
+    }
 const crumb = (...p) => ['Kho', ...p].map((x, i, a) => i === a.length - 1 ? `<b>${esc(x)}</b>` : esc(x)).join(' › ');
 
 /* ---------- UC 1: Đăng nhập ---------- */
@@ -235,7 +243,7 @@ const LG_IC = {
 function pageLogin() {
   $('#app').innerHTML = `<div class="login"><div class="left"><div class="logo"><img src="/logo.png" alt="WinKids" style="width:150px"></div><h1>Hệ thống quản lý kho</h1><p>Quản lý nhập, xuất và tồn kho nhanh chóng, chính xác</p></div>
   <div class="right"><div class="card" style="padding:30px"><h2 class="title">Đăng nhập</h2><p class="sub-t">Vui lòng nhập tài khoản để vào hệ thống.</p>
-    <div class="field"><label class="f">Tên đăng nhập <i>*</i></label><div class="lg-inp"><span class="lg-ic">${LG_IC.user}</span><input id="lu" class="inp" inputmode="tel" autocomplete="username" placeholder="Nhập số điện thoại"></div><div class="ferr" id="eu"></div></div>
+    <div class="field"><label class="f">Tên đăng nhập <i>*</i></label><div class="lg-inp"><span class="lg-ic">${LG_IC.user}</span><input id="lu" class="inp" inputmode="tel" autocomplete="username" placeholder="Nhập tên đăng nhập"></div><div class="ferr" id="eu"></div></div>
     <div class="field"><label class="f">Mật khẩu <i>*</i></label><div class="lg-inp"><span class="lg-ic">${LG_IC.lock}</span><input id="lp" type="password" class="inp" autocomplete="current-password" placeholder="Nhập mật khẩu"><button type="button" class="lg-eye" id="eye" title="Hiện mật khẩu" aria-label="Hiện mật khẩu">${LG_IC.eye}</button></div><div class="ferr" id="ep"></div></div>
     <div id="lerr"></div>
     <button class="btn" style="width:100%;margin-top:24px" id="lb">Đăng nhập</button></div></div></div>`;
@@ -254,37 +262,44 @@ function pageLogin() {
 /* ---------- Tổng quan ---------- */
 async function pageTongQuan() {
   const d = await api('GET', '/api/tongquan'), ql = S.me.role === 'QuanLy';
-  shell(crumb('Tổng quan'), `<h2 class="title">Tổng quan kho</h2><br>
+  shell(crumb('Tổng quan'), `${nkHead('Tổng quan kho')}
   <div class="stats"><div class="stat"><span>Tổng mặt hàng</span><b>${d.tongMatHang}</b></div>
     <div class="stat"><span>${ql ? 'Phiếu nhập chờ xác nhận' : 'Đơn chờ nhập'}</span><b>${ql ? d.phieuNhapChoXacNhan : d.donChoNhap}</b></div>
     <div class="stat"><span>Phiếu xuất hôm nay</span><b>${d.phieuXuatHomNay}</b></div>
     <div class="stat"><span>${ql ? 'Hàng dưới mức tối thiểu' : 'Hàng sắp hết'}</span><b class="warn">${d.duoiMuc}</b></div></div>
-  <div class="card"><h3>Phiếu gần đây</h3>${table([['Mã phiếu', r => esc(r.ma)], ['Loại', r => r.loai], ['Ngày', r => fd(r.ngay)], ['Người lập', r => esc(r.nguoiLap)], ['Trạng thái', r => badge(r.trangThai)]], d.phieuGanDay)}</div>`);
+  <div class="card"><h3>Phiếu gần đây</h3>${table([['Mã phiếu', r => esc(r.ma)], ['Loại', r => r.loai], ['Ngày', r => fd(r.ngay)], ['Người lập', r => esc(r.nguoiLap)], ['Trạng thái', r => r.trangThai === 'ChoXuLy' ? '<span class="badge b-amber">Có sai lệch</span>' : r.trangThai === 'DaXacNhan' && r.loai === 'Xuất kho' ? '<span class="badge b-green">Hoàn tất</span>' : badge(r.trangThai)]], d.phieuGanDay)}</div>`);
 }
 
 /* ---------- UC 2: Tra cứu, lọc ---------- */
 async function pageTraCuu() {
   const [dm, kho] = await Promise.all([api('GET', '/api/danhmuc'), api('GET', '/api/kho')]);
-  const pg = shell(crumb('Tồn kho', 'Tra cứu thông tin'), `<div class="row"><h2 class="title grow">Tra cứu nguyên vật liệu</h2><span class="muted">● Cập nhật theo thời gian thực</span></div><br>
-  <div class="row"><div class="grow">${srchInp('q', 'Nhập tên nguyên vật liệu cần tìm')}</div><button class="btn" id="go">Tìm kiếm</button></div><div class="ferr" id="qerr"></div><br>
-  <div class="row"><div><label class="f">Danh mục</label><select id="dm" class="inp"><option value="">Tất cả danh mục</option>${dm.map(d => `<option value="${d.maDanhMuc}">${esc(d.tenDanhMuc)}</option>`).join('')}</select></div>
+  shell(crumb('Tồn kho', 'Tra cứu thông tin'), `${nkHead('Tra cứu nguyên vật liệu', '<span class="tc-live"><i></i>Cập nhật theo thời gian thực</span>')}
+  <div class="row tc-bar"><div class="grow">${srchInp('q', 'Nhập tên nguyên vật liệu cần tìm')}</div><button class="btn" id="go">Tìm kiếm</button></div><div class="ferr" id="qerr"></div>
+  <div class="row tc-loc"><div><label class="f">Danh mục</label><select id="dm" class="inp"><option value="">Tất cả danh mục</option>${dm.map(d => `<option value="${d.maDanhMuc}">${esc(d.tenDanhMuc)}</option>`).join('')}</select></div>
     <div><label class="f">Kho</label><select id="kho" class="inp"><option value="">Tất cả kho</option>${kho.map(k => `<option value="${k.maKho}">${esc(k.tenKho)}</option>`).join('')}</select></div>
-    <button class="btn link" id="clr" style="margin-top:20px">Xóa bộ lọc</button></div><br>
+    <button class="btn link" id="clr" style="display:none">Xóa bộ lọc</button></div><div class="ferr" id="lerr2"></div>
   <div class="card" id="res"></div>`);
   const all = await api('GET', '/api/nguyenlieu');
-  goiY($('#q'), () => all.map(n => ({ v: n.tenNguyenLieu, sub: n.tenDanhMuc })), () => load(), 'dong');
+  let tuKhoa = ''; // chỉ tìm khi bấm Tìm kiếm / Enter / chọn gợi ý (Figma UC 2.1)
+  goiY($('#q'), () => all.map(n => ({ v: n.tenNguyenLieu, sub: n.tenDanhMuc })), () => { tuKhoa = $('#q').value.trim(); load(); }, 'dong');
   const load = async () => {
-    const q = $('#q').value.trim(), p = new URLSearchParams({ dm: $('#dm').value, kho: $('#kho').value });
-    const k = boDau(q); // tìm không phân biệt dấu: "sua" vẫn ra "Sữa"
+    const coLoc = $('#dm').value || $('#kho').value, p = new URLSearchParams({ dm: $('#dm').value, kho: $('#kho').value });
+    const k = boDau(tuKhoa); // không phân biệt hoa thường, có dấu hay không (BR02)
     const rows = (await api('GET', '/api/nguyenlieu?' + p)).filter(r => !k || boDau(r.tenNguyenLieu).includes(k) || boDau(r.maNguyenLieu).includes(k));
-    $('#qerr').textContent = q && !rows.length ? 'Không tìm thấy nguyên liệu phù hợp' : '';
-    const filtered = q || $('#dm').value || $('#kho').value;
-    $('#res').innerHTML = `<div class="row"><h3 class="grow">${filtered ? 'Kết quả tìm kiếm' : 'Danh sách nguyên vật liệu'}</h3>${filtered ? `<span class="muted">Tìm thấy ${rows.length} nguyên liệu</span>` : ''}</div>` +
-      table([['Tên nguyên liệu', r => `<b>${esc(r.tenNguyenLieu)}</b>`], ['Danh mục', r => esc(r.tenDanhMuc)], ['Kho', r => esc(r.tenKho)], ['Số lượng', r => `<b>${r.soLuongTon} ${esc(r.donViTinh)}</b>`]],
-        rows, $('#dm').value || $('#kho').value ? 'Không có nguyên liệu trong danh mục/kho đã chọn' : 'Không tìm thấy nguyên liệu phù hợp');
+    $('#clr').style.display = coLoc ? '' : 'none';
+    const khongThay = tuKhoa && !rows.length, locRong = !tuKhoa && coLoc && !rows.length;
+    $('#qerr').textContent = khongThay ? 'Không tìm thấy nguyên liệu phù hợp' : ''; $('#q').classList.toggle('err', !!khongThay);
+    $('#lerr2').textContent = locRong ? 'Không có nguyên liệu trong danh mục/kho đã chọn' : '';
+    const tieu = tuKhoa ? 'Kết quả tìm kiếm' : coLoc ? 'Kết quả lọc' : 'Danh sách nguyên vật liệu';
+    const dem = tuKhoa ? (rows.length ? `Tìm thấy ${rows.length} nguyên liệu cho từ khóa “${esc(tuKhoa)}”` : '') : coLoc && rows.length ? `Tìm thấy ${rows.length} nguyên liệu` : '';
+    $('#res').innerHTML = `<div class="nk-chead"><h3>${tieu}</h3><span class="muted">${dem}</span></div>` + (rows.length
+      ? table([['Tên nguyên liệu', r => `<b>${esc(r.tenNguyenLieu)}</b>`], ['Danh mục', r => esc(r.tenDanhMuc)], ['Kho', r => esc(r.tenKho)], ['Số lượng', r => `<b>${r.soLuongTon} ${esc(r.donViTinh)}</b>`]], rows)
+      : `<div class="tc-empty">${hhIcon('<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>')}<p>${khongThay ? 'Không tìm thấy nguyên liệu phù hợp' : 'Không có nguyên liệu trong danh mục/kho đã chọn'}</p></div>`);
   };
-  $('#go').onclick = load; $('#q').onkeydown = e => { if (e.key === 'Enter') load(); }; $('#dm').onchange = load; $('#kho').onchange = load;
-  $('#clr').onclick = () => { $('#q').value = ''; $('#dm').value = ''; $('#kho').value = ''; load(); };
+  const tim = () => { tuKhoa = $('#q').value.trim(); load(); };
+  $('#go').onclick = tim; $('#q').onkeydown = e => { if (e.key === 'Enter') tim(); }; $('#dm').onchange = load; $('#kho').onchange = load;
+  $('#q').addEventListener('input', () => { $('#qerr').textContent = ''; });
+  $('#clr').onclick = () => { $('#dm').value = ''; $('#kho').value = ''; load(); };
   load();
 }
 
@@ -327,7 +342,8 @@ const nkClear = ma => { delete NK[ma]; try { sessionStorage.removeItem('nk:' + m
 // Chọn ảnh từ máy (UC 3.2 bước 2a)
 function nkChonFile() {
   return new Promise(res => {
-    const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*';
+    // Cho chọn cả PDF để hệ thống báo đúng lỗi "Không hỗ trợ định dạng này" (Figma UC 3.2-06)
+    const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*,.pdf,application/pdf';
     i.onchange = async () => { const f = i.files[0]; if (!f) return res(null);
       try { res(await fileToDataUrl(f)); } catch (m) { nkKhongHoTro(); res(null); } };
     i.click();
@@ -607,6 +623,11 @@ async function pageLoHang(maPN, chonMa) {
 }
 
 /* ---------- UC 4: Xuất kho ---------- */
+const PX_MOI = { ma: null };
+const PX_IC = {
+  ok: '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 6v6l4 2"/></svg>'
+};
 async function pageXuatKho() {
   const rows = await api('GET', '/api/phieuxuat');
   // Figma UC4.1-02: ô tìm theo mã phiếu nằm trong khung danh sách; phiếu đã xác nhận hiện "Hoàn tất"
@@ -614,31 +635,31 @@ async function pageXuatKho() {
   shell(crumb('Xuất kho'), `${nkHead('Xuất kho', `<button class="btn" onclick="location.hash='#/xuatkho/tao'">+ Tạo phiếu xuất kho</button>`)}
   <div class="card"><div class="px-search"><input id="q" class="inp" placeholder="Tìm kiếm theo mã phiếu"></div><div id="ds"></div></div>`);
   const ve = list => $('#ds').innerHTML = table([['Mã phiếu', r => r.maPhieuXuat], ['Ngày tạo', r => `<span class="muted">${fd(r.ngayXuat)}</span>`], ['Người lập', r => esc(r.nguoiLap)], ['Lý do xuất', r => esc(r.lyDoXuat)], ['Số mặt hàng', r => r.soMatHang], ['Trạng thái', tt]],
-    list, rows.length ? 'Không tìm thấy phiếu xuất phù hợp' : 'Chưa có phiếu xuất');
-  ve(rows);
+    list, rows.length ? 'Không tìm thấy phiếu xuất phù hợp' : 'Chưa có phiếu xuất', r => r.maPhieuXuat === PX_MOI.ma ? 'px-moi' : '');
+  ve(rows); PX_MOI.ma = null;
   $('#q').oninput = () => { const k = $('#q').value.trim().toUpperCase().replace(/\s/g, ''); ve(rows.filter(r => r.maPhieuXuat.toUpperCase().includes(k))); };
 }
 async function pageXuatForm() {
   const [nls, ds] = await Promise.all([api('GET', '/api/nguyenlieu'), api('GET', '/api/phieuxuat')]); const items = [];
   const soMax = ds.reduce((m, r) => Math.max(m, parseInt(String(r.maPhieuXuat).slice(3), 10) || 0), 0);
   const maDuKien = 'PX-' + String(soMax + 1).padStart(4, '0');
-  shell(crumb('Xuất kho', 'Tạo phiếu xuất kho'), `<h2 class="title">Tạo phiếu xuất kho</h2><br><div id="ferr"></div>
-  <div class="card"><h3>Thông tin phiếu</h3><div class="grid4"><div><label class="f">Mã phiếu</label><input class="inp" readonly value="${maDuKien}"></div>
+  shell(crumb('Xuất kho', 'Tạo phiếu xuất kho'), `${nkHead('Tạo phiếu xuất kho')}<div id="ferr"></div>
+  <div class="card"><h3>Thông tin phiếu</h3><div class="grid4"><div><label class="f">Mã phiếu</label><input class="inp" id="maPX" readonly value="${maDuKien}"></div>
     <div><label class="f">Ngày tạo</label><input class="inp" readonly value="${fd(todayISO())}"></div>
     <div><label class="f">Người lập</label><input class="inp" readonly value="${esc(S.me.hoTen)}"></div>
-    <div><label class="f">Lý do xuất <i>*</i></label><select id="ld" class="inp"><option value="">Chọn lý do xuất</option><option>Ca bán hàng</option><option>Xuất hủy (hết hạn / hư hỏng)</option><option>Dùng nội bộ / mẫu thử</option></select><div class="ferr" id="e0"></div></div></div></div>
+    <div><label class="f">Lý do xuất</label><select id="ld" class="inp"><option value="">Chọn lý do xuất</option><option>Ca bán hàng</option><option>Xuất hủy (hết hạn / hư hỏng)</option><option>Dùng nội bộ / mẫu thử</option></select><div class="ferr" id="e0"></div></div></div></div>
   <div class="card"><h3>Nguyên liệu cần xuất</h3><div class="row" style="align-items:flex-start">
     <div class="grow"><label class="f">Tìm kiếm nguyên liệu</label><input id="tim" class="inp" autocomplete="off" placeholder="Nhập tên nguyên liệu"><div class="ferr" id="e1"></div><div class="hint" id="h1"></div></div>
     <div style="width:220px"><label class="f">Số lượng</label><div class="unit-inp"><input id="sl" class="inp" type="number" min="1" placeholder="Nhập số lượng"><span id="dv"></span></div><div class="ferr" id="e2"></div></div>
     <button class="btn o" id="them" style="margin-top:20px">+ Thêm nguyên liệu</button></div></div>
   <div class="card" id="bang"></div>
   <div class="row end"><button class="btn o" onclick="location.hash='#/xuatkho'">Hủy</button><button class="btn" id="ok">Xác nhận</button></div>`);
-  const draw = () => $('#bang').innerHTML = table([['STT', (r) => items.indexOf(r) + 1], ['Tên nguyên liệu', r => esc(r.ten)], ['Đơn vị', r => esc(r.dvt)], ['Số lượng xuất', r => r.soLuong], ['', r => `<button class="btn sm o red" data-rm="${r.maNguyenLieu}">Bỏ</button>`]], items, 'Chưa có nguyên liệu nào trong phiếu');
+  const draw = () => $('#bang').innerHTML = table([['STT', (r) => items.indexOf(r) + 1], ['Tên nguyên liệu', r => esc(r.ten)], ['Đơn vị', r => esc(r.dvt)], ['Số lượng xuất', r => r.soLuong], ['', r => `<button class="px-rm" data-rm="${r.maNguyenLieu}" title="Bỏ nguyên liệu này">✕</button>`]], items, 'Chưa có nguyên liệu nào trong phiếu');
   $('#bang').onclick = e => { const m = e.target.dataset.rm; if (m) { items.splice(items.findIndex(i => i.maNguyenLieu === m), 1); draw(); } };
   draw();
   const timNL = () => nls.find(x => x.tenNguyenLieu.toLowerCase() === $('#tim').value.trim().toLowerCase());
   const capNhatGoiY = () => { const n = timNL(); $('#h1').textContent = n ? `Tồn kho khả dụng: ${n.soLuongTon} ${n.donViTinh}` : ''; $('#dv').textContent = n ? n.donViTinh : ''; };
-  goiY($('#tim'), () => nls.map(n => ({ v: n.tenNguyenLieu, sub: `Tồn: ${n.soLuongTon} ${n.donViTinh}` })), capNhatGoiY);
+  goiY($('#tim'), () => nls.map(n => ({ v: n.tenNguyenLieu, sub: `Tồn: ${n.soLuongTon} ${n.donViTinh}` })), capNhatGoiY, 'dong');
   $('#tim').addEventListener('input', () => { $('#e1').textContent = ''; capNhatGoiY(); });
   $('#them').onclick = () => {
     const ten = $('#tim').value.trim(), sl = $('#sl').value; $('#e1').textContent = $('#e2').textContent = '';
@@ -649,14 +670,16 @@ async function pageXuatForm() {
     if (sl === '') return loi('#sl', '#e2', 'Không được để trống!');
     if (!(+sl > 0) || !Number.isInteger(+sl)) return loi('#sl', '#e2', 'Số lượng xuất phải lớn hơn 0!');
     const ex = items.find(i => i.maNguyenLieu === n.maNguyenLieu); if (ex) ex.soLuong += +sl; else items.push({ maNguyenLieu: n.maNguyenLieu, ten: n.tenNguyenLieu, dvt: n.donViTinh, soLuong: +sl });
-    $('#tim').value = $('#sl').value = ''; capNhatGoiY(); draw(); toast('Đã thêm nguyên liệu thành công!');
+    $('#tim').value = $('#sl').value = ''; capNhatGoiY(); draw(); nkFlash('Đã thêm nguyên liệu thành công!');
   };
   const gui = async (phuongAn, thucXuat) => {
     try {
       const r = await api('POST', '/api/phieuxuat', { lyDoXuat: $('#ld').value, chiTiet: items.map(i => ({ maNguyenLieu: i.maNguyenLieu, soLuong: i.soLuong })), phuongAn, thucXuat });
-      if (r.choBoSung) notice('warn', 'Đã ghi nhận chờ bổ sung hàng', `Phiếu ${r.maPhieuXuat} chưa được xuất kho.`);
-      else notice('ok', 'Tạo phiếu xuất kho thành công!', `Phiếu ${r.maPhieuXuat} đã được lưu, chờ quản lý xác nhận.`);
-      location.hash = '#/xuatkho';
+      const m = modal(r.choBoSung
+        ? `<div class="notice px-done warn"><div class="big">${PX_IC.clock}</div><h3>Đã ghi nhận chờ bổ sung hàng</h3><p class="muted">Phiếu ${r.maPhieuXuat} chưa được xuất kho.</p></div>`
+        : `<div class="notice px-done ok"><div class="big">${PX_IC.ok}</div><h3>Tạo phiếu xuất kho thành công!</h3><p class="muted">Phiếu ${r.maPhieuXuat} đã được lưu.</p></div>`, 'narrow');
+      PX_MOI.ma = r.maPhieuXuat;
+      setTimeout(() => { m.close(); location.hash = '#/xuatkho'; }, 2000);
     } catch (e) {
       if (e.status === 409 && e.thieu) return thieuHang(e.thieu, items, nls, gui);
       $('#ferr').innerHTML = `<div class="alert red">! ${esc(e.error)}</div>`;
@@ -664,18 +687,22 @@ async function pageXuatForm() {
   };
   $('#ok').onclick = () => {
     $('#e0').textContent = ''; $('#ferr').innerHTML = '';
-    if (!$('#ld').value) { $('#e0').textContent = 'Không được để trống!'; return; }
+    if (!$('#ld').value) { $('#e0').textContent = 'Không được để trống!'; $('#ld').classList.add('err'); $('#ld')._dd && $('#ld')._dd(); return; }
+    if (!items.length) { $('#e1').textContent = 'Không được để trống!'; $('#tim').classList.add('err'); return; }
     gui();
   };
 }
 function thieuHang(thieu, items, nls, gui) {
   let pa = null;
-  const m = modal(`<h3 style="color:#B3261E">! Thiếu hàng trong kho</h3><p class="muted">Tồn kho hiện tại không đủ cho phiếu xuất. Vui lòng chọn phương án xử lý.</p>
-    ${table([['Nguyên liệu', r => esc(r.tenNguyenLieu)], ['Yêu cầu', r => r.yeuCau + ' ' + esc(r.donViTinh)], ['Tồn kho', r => r.ton + ' ' + esc(r.donViTinh)], ['Tình trạng', r => `<span class="badge b-red">Thiếu ${r.yeuCau - r.ton} ${esc(r.donViTinh)}</span>`]], thieu)}
-    <br><b>Phương án xử lý</b><br><br>
-    <div class="opt" data-pa="LayConLai"><input type="radio" name="pa"><span><b>Lấy số lượng còn lại</b><small>Chỉ xuất phần còn trong kho.</small></span></div>
+  const tatCa = items.map(i => { const t = thieu.find(x => x.maNguyenLieu === i.maNguyenLieu), n = nls.find(x => x.maNguyenLieu === i.maNguyenLieu) || {};
+    return { ten: i.ten, dvt: i.dvt, yeuCau: i.soLuong, ton: t ? t.ton : n.soLuongTon, thieu: t ? t.yeuCau - t.ton : 0 }; });
+  const conLai = thieu.map(t => `${esc(t.tenNguyenLieu)}: ${t.ton} ${esc(t.donViTinh)}`).join('; ');
+  const m = modal(`<h3 class="px-thieu">${NK_IC.err} Thiếu hàng trong kho</h3><p class="muted px-msub">Tồn kho hiện tại không đủ cho phiếu xuất ${esc($('#maPX') ? $('#maPX').value : '')}. Vui lòng chọn phương án xử lý.</p>
+    ${table([['Nguyên liệu', r => esc(r.ten)], ['Yêu cầu', r => r.yeuCau + ' ' + esc(r.dvt)], ['Tồn kho', r => r.ton + ' ' + esc(r.dvt)], ['Tình trạng', r => r.thieu ? `<span class="badge b-red">Thiếu ${r.thieu} ${esc(r.dvt)}</span>` : '<span class="badge b-green">Đủ hàng</span>']], tatCa)}
+    <p class="px-pa">Phương án xử lý</p>
+    <div class="opt" data-pa="LayConLai"><input type="radio" name="pa"><span><b>Lấy số lượng còn lại</b><small>Chỉ xuất phần còn trong kho (${conLai}).</small></span></div>
     <div class="opt" data-pa="ChoBoSung"><input type="radio" name="pa"><span><b>Không lấy số lượng còn lại</b><small>Chưa xuất kho, phiếu được ghi nhận chờ bổ sung hàng.</small></span></div>
-    <div class="acts"><button class="btn o" data-close>Quay lại</button><button class="btn" id="paok" disabled>Xác nhận phương án xử lý</button></div>`, 'wide');
+    <div class="acts"><button class="btn" id="paok" disabled>Xác nhận phương án xử lý</button></div>`, 'wide');
   $$('.opt', m.el).forEach(o => o.onclick = () => { $$('.opt', m.el).forEach(x => x.classList.remove('on')); o.classList.add('on'); $('input', o).checked = true; pa = o.dataset.pa; $('#paok').disabled = false; });
   $('#paok').onclick = () => {
     if (pa === 'ChoBoSung') { m.close(); return gui(pa); }
@@ -683,7 +710,7 @@ function thieuHang(thieu, items, nls, gui) {
     // UC 4.2 (Figma): bảng gồm mọi nguyên liệu trong phiếu, cột "Thực xuất" cho phép chỉnh sửa
     const rows = items.map(i => { const n = nls.find(x => x.maNguyenLieu === i.maNguyenLieu) || {}, t = thieu.find(x => x.maNguyenLieu === i.maNguyenLieu);
       const ton = t ? t.ton : n.soLuongTon; return { ma: i.maNguyenLieu, ten: i.ten, dvt: i.dvt, yeuCau: i.soLuong, ton, max: Math.min(i.soLuong, ton) }; });
-    const c = modal(`<h3>Xác nhận số lượng thực tế sẽ xuất</h3><p class="muted">Hệ thống chỉ xuất theo số lượng còn khả dụng hiện có. Vui lòng kiểm tra lại số lượng.</p>
+    const c = modal(`<h3>Xác nhận số lượng thực tế sẽ xuất</h3><p class="muted px-msub">Hệ thống chỉ xuất theo số lượng tồn kho hiện có. Vui lòng kiểm tra lại số lượng.</p>
       <table class="tbl"><thead><tr><th>Nguyên liệu</th><th>Yêu cầu</th><th>Tồn kho</th><th style="width:150px">Thực xuất</th></tr></thead><tbody>
       ${rows.map(r => `<tr><td>${esc(r.ten)}</td><td>${r.yeuCau} ${esc(r.dvt)}</td><td>${r.ton} ${esc(r.dvt)}</td>
         <td><div class="unit-inp sm"><input class="inp tx" type="number" min="1" max="${r.max}" data-ma="${esc(r.ma)}" value="${r.max}"><span>${esc(r.dvt)}</span></div><div class="ferr" data-e="${esc(r.ma)}"></div></td></tr>`).join('')}</tbody></table>
@@ -1173,7 +1200,7 @@ async function pageHangHoa(cn, nhanManh) {
   const xacNhan = () => {
     const n = chon;
     const m = modal(`<div class="notice"><div class="big hh-del">${hhIcon(HH_CN.xoa[2])}</div><h3>Xác nhận xóa loại sản phẩm</h3><p class="muted">Bạn có chắc chắn muốn xóa loại sản phẩm<br>“${esc(n.tenNguyenLieu)}” (${esc(n.maNguyenLieu)}) khỏi hệ thống không?</p>
-      <div class="acts hh-2b"><button class="btn o" id="kh">Hủy</button><button class="btn" id="ok">Xóa</button></div></div>`, 'narrow');
+      <div class="acts hh-2b"><button class="btn o" id="kh">Hủy</button><button class="btn red" id="ok">Xóa</button></div></div>`, 'narrow');
     $('#kh').onclick = () => { m.close(); hhThongBao('Hủy xóa loại sản phẩm', 'Danh sách loại sản phẩm được giữ nguyên.'); };
     $('#ok').onclick = async () => {
       m.close();
@@ -1407,31 +1434,37 @@ async function pageBaoCaoChiTiet(loai) {
 }
 
 /* ---------- UC 10: Tài khoản ---------- */
+const TK_MOI = { ma: null, msg: null };
 async function pageTaiKhoan() {
   const rows = await api('GET', '/api/taikhoan');
-  shell(crumb('Tài khoản'), `<div class="row"><h2 class="title grow">Tài khoản</h2><button class="btn" id="add">Tạo tài khoản</button></div><br>
-  <div class="card"><div class="row"><h3 class="grow">Danh sách tài khoản</h3><span class="muted">${rows.length} tài khoản</span></div>
-  ${table([['Họ tên', r => `<b>${esc(r.hoTen)}</b>`], ['Số điện thoại', r => esc(r.soDienThoai)], ['Quyền', r => badge(r.quyen)], ['Ngày tạo', r => fd(r.ngayTao)], ['Thao tác', r => `<button class="btn sm o" data-p="${r.maTaiKhoan}">Phân quyền</button>`]], rows)}</div>`);
+  shell(crumb('Tài khoản'), `${nkHead('Tài khoản', '<button class="btn" id="add">Tạo tài khoản</button>')}
+  <div class="card"><div class="nk-chead"><h3>Danh sách tài khoản</h3><span class="muted">${rows.length} tài khoản</span></div>
+  ${table([['Họ tên', r => `<b>${esc(r.hoTen)}</b>`], ['Số điện thoại', r => fmtSdt(r.soDienThoai)], ['Quyền', r => badge(r.quyen)], ['Ngày tạo', r => fd(r.ngayTao)], ['Thao tác', r => `<button class="btn sm o" data-p="${r.maTaiKhoan}">Phân quyền</button>`]], rows, 'Chưa có tài khoản', r => r.maTaiKhoan === TK_MOI.ma ? 'hh-hl-ok' : '')}</div>`);
+  if (TK_MOI.msg) { const msg = TK_MOI.msg; nkFlash(msg); const r = $('#nkRight'); r._goc = undefined; r.innerHTML = `<div class="nk-flash ok">${NK_IC.ok}<span>${esc(msg)}</span></div><button class="btn" id="add">Tạo tài khoản</button>`; r.classList.add('tk-r'); }
+  TK_MOI.ma = TK_MOI.msg = null;
   $('#add').onclick = () => {
-    const m = modal(`<button class="x" data-close>✕</button><h3>Tạo tài khoản</h3><br><div id="me"></div>
+    const m = modal(`<div class="nk-mhead"><h3>Tạo tài khoản</h3><button class="nk-x" data-close>✕</button></div><div id="me"></div>
       <div class="field"><label class="f">Họ tên</label><input id="h" class="inp" placeholder="Nhập họ tên"></div>
-      <div class="field"><label class="f">Số điện thoại</label><input id="s" class="inp" placeholder="VD: 0905 123 456"></div>
+      <div class="field"><label class="f">Số điện thoại</label><input id="s" class="inp" inputmode="tel" placeholder="VD: 0905 123 456"></div>
       <div class="field"><label class="f">Mật khẩu</label><input id="p" type="password" class="inp" placeholder="Nhập mật khẩu"></div>
-      <div class="acts"><button class="btn" id="ok">Xác nhận tạo</button></div>`);
+      <div class="acts"><button class="btn" id="ok">Xác nhận tạo</button></div>`, 'narrow');
     $('#ok').onclick = async () => {
-      try { await api('POST', '/api/taikhoan', { hoTen: $('#h').value, soDienThoai: $('#s').value, matKhau: $('#p').value }); m.close(); toast('Tạo tài khoản thành công'); pageTaiKhoan(); }
-      catch (e) { if (e.status === 409) { m.close(); notice('err', 'Số điện thoại đã được đăng ký', `Số ${e.soDienThoai} đã được dùng cho một tài khoản khác.`); } else $('#me').innerHTML = `<div class="alert red">! ${esc(e.error)}</div>`; }
+      $('#me').innerHTML = '';
+      const b = { hoTen: $('#h').value.trim(), soDienThoai: $('#s').value.trim(), matKhau: $('#p').value };
+      if (!b.hoTen || !b.soDienThoai || !b.matKhau) return $('#me').innerHTML = `<div class="nk-alert red">${NK_IC.err} Vui lòng nhập đầy đủ thông tin</div>`;
+      try { const r = await api('POST', '/api/taikhoan', b); m.close(); TK_MOI.ma = r.maTaiKhoan; TK_MOI.msg = 'Tạo tài khoản thành công'; pageTaiKhoan(); }
+      catch (e) { if (e.status === 409) { m.close(); notice('err', 'Số điện thoại đã được đăng ký', `Số ${fmtSdt(e.soDienThoai)} đã được dùng cho một tài khoản khác.`); } else $('#me').innerHTML = `<div class="nk-alert red">${NK_IC.err} ${esc(e.error)}</div>`; }
     };
   };
   $$('[data-p]').forEach(b => b.onclick = () => {
     const t = rows.find(r => r.maTaiKhoan === b.dataset.p); let chon = t.maPhanQuyen;
-    const m = modal(`<button class="x" data-close>✕</button><h3>Phân quyền</h3><p class="muted">${esc(t.hoTen)} · ${esc(t.soDienThoai)}</p><div id="me"></div><label class="f">Danh sách quyền</label>
-      ${[['QuanLy', 'Quản lý'], ['NhanVien', 'Nhân viên']].map(([v, n]) => `<div class="opt ${chon === v ? 'on' : ''}" data-v="${v}"><input type="checkbox" ${chon === v ? 'checked' : ''}><span>${n}</span></div>`).join('')}
-      <div class="acts"><button class="btn" id="ok">Lưu thiết lập</button></div>`);
-    $$('.opt', m.el).forEach(o => o.onclick = () => { const on = !o.classList.contains('on'); $$('.opt', m.el).forEach(x => { x.classList.remove('on'); $('input', x).checked = false; }); if (on) { o.classList.add('on'); $('input', o).checked = true; chon = o.dataset.v; } else chon = null; });
+    const m = modal(`<div class="nk-mhead"><div><h3>Phân quyền</h3><p class="muted">${esc(t.hoTen)} · ${fmtSdt(t.soDienThoai)}</p></div><button class="nk-x" data-close>✕</button></div><div id="me"></div><label class="f">Danh sách quyền</label>
+      ${[['QuanLy', 'Quản lý'], ['NhanVien', 'Nhân viên']].map(([v, n]) => `<label class="tk-q ${chon === v ? 'on' : ''}" data-v="${v}"><input type="checkbox" ${chon === v ? 'checked' : ''}><span>${n}</span></label>`).join('')}
+      <div class="acts"><button class="btn" id="ok">Lưu thiết lập</button></div>`, 'narrow');
+    $$('.tk-q', m.el).forEach(o => o.onclick = e => { e.preventDefault(); const on = !o.classList.contains('on'); $$('.tk-q', m.el).forEach(x => { x.classList.remove('on'); $('input', x).checked = false; }); if (on) { o.classList.add('on'); $('input', o).checked = true; chon = o.dataset.v; } else chon = null; $('#me').innerHTML = ''; });
     $('#ok').onclick = async () => {
-      if (!chon) return $('#me').innerHTML = '<div class="alert red">! Vui lòng chọn ít nhất một quyền cho tài khoản</div>';
-      try { await api('PUT', `/api/taikhoan/${t.maTaiKhoan}/quyen`, { maPhanQuyen: chon }); m.close(); toast('Cập nhật quyền thành công'); pageTaiKhoan(); } catch (e) { $('#me').innerHTML = `<div class="alert red">! ${esc(e.error)}</div>`; }
+      if (!chon) return $('#me').innerHTML = `<div class="nk-alert red">${NK_IC.err} Vui lòng chọn ít nhất một quyền cho tài khoản</div>`;
+      try { await api('PUT', `/api/taikhoan/${t.maTaiKhoan}/quyen`, { maPhanQuyen: chon }); m.close(); TK_MOI.ma = t.maTaiKhoan; TK_MOI.msg = 'Cập nhật quyền thành công'; pageTaiKhoan(); } catch (e) { $('#me').innerHTML = `<div class="nk-alert red">${NK_IC.err} ${esc(e.error)}</div>`; }
     };
   });
 }
