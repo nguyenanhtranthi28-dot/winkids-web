@@ -202,14 +202,13 @@ function shell(crumb, html) {
     m.innerHTML = `<div class="um-head"><span class="av ${ql ? 'ql' : ''}">${esc(ini)}</span><span><b>${esc(me.hoTen)}</b><small>${ql ? 'Quản lý' : 'Nhân viên'}</small><small>${fmtSdt(me.soDienThoai)}</small></span></div>
       <a id="mInfo">${LG_IC.user}Thông tin cá nhân</a><a id="mOut" class="red"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></svg>Đăng xuất</a>`;
     $('#userchip').appendChild(m);
-    // "Thông tin cá nhân" (Figma UC 10.2-06): xem thông tin, kèm đổi mật khẩu
+    // "Thông tin cá nhân" (Figma UC 10.2-06): chỉ xem thông tin (đặc tả không có đổi mật khẩu)
     $('#mInfo').onclick = () => {
       const i = modal(`<div class="nk-mhead"><h3>Thông tin cá nhân</h3><button class="nk-x" data-close>✕</button></div>
         <div class="field"><label class="f">Họ tên</label><input class="inp" readonly value="${esc(me.hoTen)}"></div>
         <div class="field"><label class="f">Tên đăng nhập (số điện thoại)</label><input class="inp" readonly value="${fmtSdt(me.soDienThoai)}"></div>
         <div class="field"><label class="f">Quyền</label><input class="inp" readonly value="${ql ? 'Quản lý' : 'Nhân viên'}"></div>
-        <div class="acts"><button class="btn o" id="mPass">Đổi mật khẩu</button><button class="btn" data-close>Đóng</button></div>`, 'narrow');
-      $('#mPass', i.el).onclick = () => { i.close(); doiMatKhau(); };
+        <div class="acts"><button class="btn" data-close>Đóng</button></div>`, 'narrow');
     };
     $('#mOut').onclick = async () => { await api('POST', '/api/logout'); S.me = null; location.hash = '#/login'; };
     document.addEventListener('click', () => m.remove(), { once: true });
