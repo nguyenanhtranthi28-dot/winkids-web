@@ -654,7 +654,7 @@ async function pageXuatForm() {
     <button class="btn o" id="them" style="margin-top:20px">+ Thêm nguyên liệu</button></div></div>
   <div class="card" id="bang"></div>
   <div class="row end"><button class="btn o" onclick="location.hash='#/xuatkho'">Hủy</button><button class="btn" id="ok">Xác nhận</button></div>`);
-  const draw = () => $('#bang').innerHTML = table([['STT', (r) => items.indexOf(r) + 1], ['Tên nguyên liệu', r => esc(r.ten)], ['Đơn vị', r => esc(r.dvt)], ['Số lượng xuất', r => r.soLuong], ['', r => `<button class="px-rm" data-rm="${r.maNguyenLieu}" title="Bỏ nguyên liệu này">✕</button>`]], items, 'Chưa có nguyên liệu nào trong phiếu');
+  const draw = () => $('#bang').innerHTML = table([['STT', (r) => items.indexOf(r) + 1], ['Tên nguyên liệu', r => esc(r.ten)], ['Đơn vị', r => esc(r.dvt)], ['Số lượng xuất', r => r.soLuong]], items, 'Chưa có nguyên liệu nào trong phiếu');
   $('#bang').onclick = e => { const m = e.target.dataset.rm; if (m) { items.splice(items.findIndex(i => i.maNguyenLieu === m), 1); draw(); } };
   draw();
   const timNL = () => nls.find(x => x.tenNguyenLieu.toLowerCase() === $('#tim').value.trim().toLowerCase());
@@ -859,6 +859,7 @@ async function chiTietPhieu(loai, id, daLuu) {
     try { await api('POST', `/api/phieu${loai}/${encodeURIComponent(id)}/xacnhan`); S.me = await api('GET', '/api/me'); chiTietPhieu(loai, id, true); }
     catch (e) {
       $('#xn').disabled = false;
+      if (e.error && e.error.includes('lô hàng/HSD')) return notice('err', 'Chưa thể xác nhận phiếu nhập', `Phiếu ${id} chưa được nhân viên cập nhật đầy đủ số lô và hạn sử dụng. Vui lòng nhắc nhân viên hoàn tất bước Lô hàng/HSD.`);
       notice('err', 'Có lỗi xảy ra', `Chưa cập nhật ${ten} ${id}. Phiếu vẫn chờ xác nhận, chưa lưu vào lịch sử ${nhap ? 'nhập' : 'xuất'} kho.` + (e.error && e.error !== 'Có lỗi xảy ra' ? ` (${e.error})` : ''));
     }
   };
@@ -1122,14 +1123,12 @@ async function pageHangHoa(cn, nhanManh) {
       <div class="field"><label class="f">Mã sản phẩm <i>*</i></label><input id="ma" class="inp" ${n ? 'readonly' : ''} value="${esc(n?.maNguyenLieu)}" placeholder="VD: NL-005"><div class="ferr" id="e_maNguyenLieu"></div></div>
       <div class="field"><label class="f">Tên sản phẩm <i>*</i></label><input id="ten" class="inp" value="${esc(n?.tenNguyenLieu)}" placeholder="Nhập tên sản phẩm"><div class="ferr" id="e_tenNguyenLieu"></div></div>
       <div class="field"><label class="f">Đơn vị tính <i>*</i></label><input id="dvt" class="inp" value="${esc(n?.donViTinh)}" placeholder="VD: hộp, kg, chai"><div class="ferr" id="e_donViTinh"></div></div>
-      <div class="grid2"><div class="field"><label class="f">Danh mục</label><select id="dm" class="inp">${dm.map(d => `<option value="${d.maDanhMuc}" ${n?.maDanhMuc === d.maDanhMuc ? 'selected' : ''}>${esc(d.tenDanhMuc)}</option>`).join('')}</select></div>
-        <div class="field"><label class="f">Kho</label><select id="kh" class="inp">${kho.map(k => `<option value="${k.maKho}" ${(n ? n.maKho : 'K02') === k.maKho ? 'selected' : ''}>${esc(k.tenKho)}</option>`).join('')}</select></div></div>
       <div class="field"><label class="f">Mô tả</label><textarea id="mt" class="inp" rows="3" placeholder="Nhập mô tả (không bắt buộc)">${esc(n?.moTa)}</textarea></div>
       <div class="acts"><button class="btn o" id="huy">Hủy</button><button class="btn" id="ok">Lưu</button></div>`);
     $('#huy').onclick = () => { m.close(); if (n) hhThongBao('Hủy chỉnh sửa loại sản phẩm', 'Thông tin loại sản phẩm được giữ nguyên.'); };
     $('#ok').onclick = async () => {
       $$('.ferr', m.el).forEach(x => x.textContent = ''); $$('.inp', m.el).forEach(x => x.classList.remove('err')); $('#me').innerHTML = '';
-      const b = { maNguyenLieu: $('#ma').value.trim(), tenNguyenLieu: $('#ten').value.trim(), donViTinh: $('#dvt').value.trim(), maDanhMuc: $('#dm').value, maKho: $('#kh').value, moTa: $('#mt').value.trim() };
+      const b = { maNguyenLieu: $('#ma').value.trim(), tenNguyenLieu: $('#ten').value.trim(), donViTinh: $('#dvt').value.trim(), moTa: $('#mt').value.trim() }; // danh mục, kho: giữ nguyên khi sửa, mặc định khi thêm (form theo Figma)
       const loi = (f, t) => { $('#e_' + f).textContent = t; $({ maNguyenLieu: '#ma', tenNguyenLieu: '#ten', donViTinh: '#dvt' }[f]).classList.add('err'); };
       const trong = { maNguyenLieu: 'Mã loại sản phẩm', tenNguyenLieu: 'Tên loại sản phẩm', donViTinh: 'Đơn vị tính' };
       let ok = true;
@@ -1137,7 +1136,7 @@ async function pageHangHoa(cn, nhanManh) {
       if (!ok) return;
       try {
         const kq = n ? await api('PUT', '/api/nguyenlieu/' + n.maNguyenLieu, b) : await api('POST', '/api/nguyenlieu', b); m.close();
-        await lai(kq && kq.khoiPhuc || b.maNguyenLieu, n ? 'Cập nhật loại sản phẩm thành công!' : kq && kq.khoiPhuc ? `Đã khôi phục loại sản phẩm đã xóa trước đó (mã ${kq.khoiPhuc})!` : 'Thêm loại sản phẩm thành công!');
+        await lai(kq && kq.khoiPhuc || b.maNguyenLieu, n ? 'Cập nhật loại sản phẩm thành công!' : 'Thêm loại sản phẩm thành công!');
       } catch (e) {
         if (e.field && trong[e.field]) loi(e.field, e.error);
         else $('#me').innerHTML = `<div class="nk-alert red">${NK_IC.err} ${esc(nkLoiMang(e) ? 'Có lỗi xảy ra, vui lòng thử lại!' : e.error || 'Có lỗi xảy ra, vui lòng thử lại!')}</div>`;
