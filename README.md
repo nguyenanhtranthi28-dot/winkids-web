@@ -72,13 +72,13 @@ Web được triển khai trên Vercel, kết nối tới cơ sở dữ liệu T
 | Vai trò | Tên đăng nhập (số điện thoại) | Mật khẩu |
 |---|---|---|
 | Quản lý | 0905100001 | 123456 |
-| Nhân viên | 0905100002 | 123456 |
+| Nhân viên | 0905100008 | 123456 |
 
 ## Thành viên
 
 | Họ và tên | Phụ trách |
 |---|---|
-| (Trần Thị Nguyên ANh | UC 3, UC 7, UC 10 |
-| (Nguyễn Thị Ngân) | UC 1, UC 4, UC 8 |
-| (Dịu Hiền ) | UC 5, UC 6, UC 9 |
-| (Lê Thanh Đan Thục) | UC 1, UC 2|
+| Trần Thị Nguyên Anh | UC 3, UC 7, UC 10 |
+| Nguyễn Thị Ngân |  UC 4, UC 8 |
+| Phùng Thị Dịu Hiền | UC 5, UC 6, UC 9 |
+| Lê Thanh Đan Thục | UC 1, UC 2|
